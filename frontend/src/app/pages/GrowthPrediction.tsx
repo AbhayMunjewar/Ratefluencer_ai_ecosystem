@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -7,11 +7,11 @@ import {
 import { TrendingUp, Target, Zap } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
 import { AvatarRing } from '../components/AvatarRing';
-import influencerData from '../../data/influencers.json';
+import { api } from '../services/api';
 
 type Scenario = 'conservative' | 'baseline' | 'optimistic';
 
-function buildChartData(inf: typeof influencerData[0], scenario: Scenario) {
+function buildChartData(inf: any, scenario: Scenario) {
   const months = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
   const multipliers = { conservative: 1.06, baseline: 1.12, optimistic: 1.22 };
   const m = multipliers[scenario];
@@ -40,7 +40,33 @@ const scenarios = [
 export default function GrowthPrediction() {
   const [scenario, setScenario] = useState<Scenario>('baseline');
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const inf = influencerData[selectedIdx];
+  const [influencers, setInfluencers] = useState<any[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadInfluencers() {
+      try {
+        const data = await api.getInfluencers();
+        if (mounted) {
+          setInfluencers(data);
+        }
+      } catch (error) {
+        console.error('Failed to load influencers:', error);
+      }
+    }
+
+    loadInfluencers();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const inf = influencers[selectedIdx] || influencers[0];
+  if (!inf) {
+    return <div style={{ padding: 28, color: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>Loading growth model...</div>;
+  }
   const data = buildChartData(inf, scenario);
   const activeScenario = scenarios.find(s => s.key === scenario)!;
 
@@ -68,7 +94,7 @@ export default function GrowthPrediction() {
           <GlassCard style={{ padding: 16 }}>
             <div className="label-caps" style={{ marginBottom: 12 }}>SELECT CREATOR</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {influencerData.slice(0, 8).map((inf, i) => (
+              {influencers.slice(0, 8).map((inf, i) => (
                 <div
                   key={inf.id}
                   onClick={() => setSelectedIdx(i)}

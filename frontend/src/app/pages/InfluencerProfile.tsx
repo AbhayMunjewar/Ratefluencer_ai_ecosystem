@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -10,7 +10,7 @@ import { AvatarRing } from '../components/AvatarRing';
 import { AIScoreGauge } from '../components/AIScoreGauge';
 import { SparkLine } from '../components/SparkLine';
 import { GlassCard } from '../components/GlassCard';
-import influencerData from '../../data/influencers.json';
+import { api } from '../services/api';
 
 const tabs = ['Overview', 'Audience', 'Content', 'Campaigns', 'AI Insights'];
 
@@ -18,7 +18,32 @@ export default function InfluencerProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
-  const inf = influencerData.find(i => i.id === id) || influencerData[0];
+  const [inf, setInf] = useState<any | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadInfluencer() {
+      try {
+        const data = await api.getInfluencerById(id || '1');
+        if (mounted) {
+          setInf(data);
+        }
+      } catch (error) {
+        console.error('Failed to load influencer profile:', error);
+      }
+    }
+
+    loadInfluencer();
+
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
+
+  if (!inf) {
+    return <div style={{ padding: 28, color: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>Loading creator profile...</div>;
+  }
 
   const audienceData = [
     { age: '13–17', pct: 8 },

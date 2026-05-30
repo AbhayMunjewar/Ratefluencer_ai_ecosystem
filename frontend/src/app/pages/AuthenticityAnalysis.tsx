@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Shield, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
-import influencerData from '../../data/influencers.json';
+import { api } from '../services/api';
 
 const mockBotData = [
   { category: 'Ghost Followers', count: 14200, pct: 6.1, risk: 'low' },
@@ -28,22 +28,59 @@ export default function AuthenticityAnalysis() {
   const [handle, setHandle] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
-  const [selectedInf, setSelectedInf] = useState(influencerData[0]);
+  const [selectedInf, setSelectedInf] = useState<any | null>(null);
+  const [influencers, setInfluencers] = useState<any[]>([]);
 
-  const handleScan = () => {
-    if (!handle.trim()) return;
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadInfluencers() {
+      try {
+        const data = await api.getInfluencers();
+        if (mounted) {
+          setInfluencers(data);
+          setSelectedInf(data[0] || null);
+        }
+      } catch (error) {
+        console.error('Failed to load influencers:', error);
+      }
+    }
+
+    loadInfluencers();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleScan = async () => {
+    if (!handle.trim() || influencers.length === 0) return;
     setScanning(true);
     setScanned(false);
-    setTimeout(() => {
-      const found = influencerData.find(i => i.handle.toLowerCase().includes(handle.toLowerCase().replace('@', '')));
-      if (found) setSelectedInf(found);
-      setScanning(false);
+    try {
+      const found = influencers.find(i => i.handle.toLowerCase().includes(handle.toLowerCase().replace('@', '')));
+      if (found) {
+        const analysis = await api.analyzeAuthenticity(found.id);
+        setSelectedInf({
+          ...found,
+          authenticity: analysis.authenticity_score,
+          engagement: analysis.engagement_rate,
+          risk: String(analysis.risk_level || '').toLowerCase(),
+        });
+      }
       setScanned(true);
-    }, 2800);
+    } finally {
+      setScanning(false);
+    }
   };
 
-  const verdictColor = selectedInf.authenticity >= 90 ? '#22D3EE' : selectedInf.authenticity >= 75 ? '#93C5FD' : '#F87171';
-  const verdictText = selectedInf.authenticity >= 90 ? 'AUTHENTIC' : selectedInf.authenticity >= 75 ? 'MOSTLY REAL' : 'SUSPICIOUS';
+  const authenticityScore = selectedInf?.authenticity ?? 0;
+  const verdictColor = authenticityScore >= 90 ? '#22D3EE' : authenticityScore >= 75 ? '#93C5FD' : '#F87171';
+  const verdictText = authenticityScore >= 90 ? 'AUTHENTIC' : authenticityScore >= 75 ? 'MOSTLY REAL' : 'SUSPICIOUS';
+
+  if (!selectedInf) {
+    return <div style={{ padding: 28, color: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>Loading authenticity engine...</div>;
+  }
 
   return (
     <motion.div
@@ -198,10 +235,10 @@ export default function AuthenticityAnalysis() {
                     stroke="url(#authGrad)"
                     strokeWidth={10}
                     strokeLinecap="round"
-                    strokeDasharray={`${(selectedInf.authenticity / 100) * Math.PI * 80} ${Math.PI * 80}`}
+                    strokeDasharray={`${(authenticityScore / 100) * Math.PI * 80} ${Math.PI * 80}`}
                     filter="url(#authGlow)"
                     initial={{ strokeDasharray: `0 ${Math.PI * 80}` }}
-                    animate={{ strokeDasharray: `${(selectedInf.authenticity / 100) * Math.PI * 80} ${Math.PI * 80}` }}
+                    animate={{ strokeDasharray: `${(authenticityScore / 100) * Math.PI * 80} ${Math.PI * 80}` }}
                     transition={{ duration: 1.5, ease: [0.23, 1, 0.32, 1], delay: 0.3 }}
                   />
                 </svg>
@@ -214,7 +251,7 @@ export default function AuthenticityAnalysis() {
                   marginTop: -20,
                   filter: `drop-shadow(0 0 12px ${verdictColor})`,
                 }}>
-                  {selectedInf.authenticity}
+                  {authenticityScore}
                 </div>
                 <div style={{
                   fontFamily: 'Cormorant Garamond, serif',

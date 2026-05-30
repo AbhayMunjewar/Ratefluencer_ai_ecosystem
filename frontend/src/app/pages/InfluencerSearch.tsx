@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Filter, Star, MapPin, Users, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { AvatarRing } from '../components/AvatarRing';
 import { AIScoreGauge } from '../components/AIScoreGauge';
 import { SparkLine } from '../components/SparkLine';
 import { GlassCard } from '../components/GlassCard';
-import influencerData from '../../data/influencers.json';
+import { api } from '../services/api';
 
 const platforms = ['All', 'Instagram', 'TikTok', 'YouTube'];
 const niches = ['All', 'Fashion', 'Tech', 'Beauty', 'Fitness', 'Gaming', 'Finance', 'Food', 'Travel'];
@@ -13,27 +14,76 @@ const followerRanges = ['All', '0–100K', '100K–1M', '1M–10M', '10M+'];
 const riskLabels = ['low', 'medium', 'high'];
 
 export default function InfluencerSearch() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [platform, setPlatform] = useState('All');
   const [niche, setNiche] = useState('All');
   const [follower, setFollower] = useState('All');
   const [minScore, setMinScore] = useState(0);
+  const [influencers, setInfluencers] = useState<any[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadInfluencers() {
+      try {
+        const data = await api.getInfluencers();
+        if (mounted) {
+          setInfluencers(data);
+        }
+      } catch (error) {
+        console.error('Failed to load influencers:', error);
+      }
+    }
+
+    loadInfluencers();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
-    return influencerData.filter(inf => {
-      if (query && !inf.name.toLowerCase().includes(query.toLowerCase()) && !inf.handle.toLowerCase().includes(query.toLowerCase())) return false;
-      if (platform !== 'All' && inf.platform !== platform) return false;
-      if (niche !== 'All' && inf.niche !== niche) return false;
-      if (follower !== 'All') {
-        if (follower === '0–100K' && inf.followers >= 100000) return false;
-        if (follower === '100K–1M' && (inf.followers < 100000 || inf.followers >= 1000000)) return false;
-        if (follower === '1M–10M' && (inf.followers < 1000000 || inf.followers >= 10000000)) return false;
-        if (follower === '10M+' && inf.followers < 10000000) return false;
-      }
-      if (inf.aiScore < minScore) return false;
-      return true;
-    });
-  }, [query, platform, niche, follower, minScore]);
+    const normalizedQuery = query.trim().toLowerCase();
+
+    const results = influencers
+      .filter(inf => {
+        if (normalizedQuery) {
+          const searchable = [inf.name, inf.handle, inf.niche, ...(inf.categories || []), inf.platform, inf.country]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          if (!searchable.includes(normalizedQuery)) return false;
+        }
+        if (platform !== 'All' && inf.platform !== platform) return false;
+        if (niche !== 'All' && inf.niche !== niche) return false;
+        if (follower !== 'All') {
+          if (follower === '0–100K' && inf.followers >= 100000) return false;
+          if (follower === '100K–1M' && (inf.followers < 100000 || inf.followers >= 1000000)) return false;
+          if (follower === '1M–10M' && (inf.followers < 1000000 || inf.followers >= 10000000)) return false;
+          if (follower === '10M+' && inf.followers < 10000000) return false;
+        }
+        if (inf.aiScore < minScore) return false;
+        return true;
+      })
+      .map(inf => {
+        const relevance = normalizedQuery
+          ? [inf.name, inf.handle, inf.niche, ...(inf.categories || []), inf.platform]
+              .filter(Boolean)
+              .reduce((score, value) => score + (String(value).toLowerCase().includes(normalizedQuery) ? 1 : 0), 0)
+          : 0;
+        return { ...inf, relevance };
+      })
+      .sort((a, b) => {
+        if (b.relevance !== a.relevance) return b.relevance - a.relevance;
+        return b.aiScore - a.aiScore;
+      });
+
+    return results;
+  }, [influencers, query, platform, niche, follower, minScore]);
+
+  const topResult = filtered[0];
+  const activeFilters = [platform !== 'All', niche !== 'All', follower !== 'All', minScore > 0, query.trim().length > 0].filter(Boolean).length;
 
   const riskColors: Record<string, string> = {
     low: '#22D3EE',
@@ -75,6 +125,11 @@ export default function InfluencerSearch() {
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+              }
+            }}
             placeholder="Search by name, handle, niche, or keyword..."
             style={{
               width: '100%',
@@ -98,7 +153,15 @@ export default function InfluencerSearch() {
               e.currentTarget.style.boxShadow = 'none';
             }}
           />
-          <div style={{
+          <button
+            type="button"
+            onClick={() => {
+              const firstCard = document.querySelector('[data-search-results]');
+              if (firstCard instanceof HTMLElement) {
+                firstCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }}
+            style={{
             position: 'absolute',
             right: 8,
             top: '50%',
@@ -112,10 +175,46 @@ export default function InfluencerSearch() {
             color: '#fff',
             cursor: 'pointer',
             boxShadow: '0 0 20px rgba(14,165,233,0.3)',
+            border: 'none',
           }}>
             Search
-          </div>
+          </button>
         </div>
+
+        {topResult && (
+          <div style={{ marginBottom: 18, display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div>
+              <div className="label-caps" style={{ marginBottom: 6 }}>Live match</div>
+              <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 16, color: '#fff' }}>
+                {activeFilters > 0 ? `${filtered.length} creators matched your filters` : `Showing the full creator catalog`}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 14, background: 'rgba(8,12,21,0.72)', border: '1px solid rgba(56,189,248,0.16)' }}>
+              <AvatarRing name={topResult.name} size={44} animated />
+              <div>
+                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#fff', fontWeight: 600 }}>{topResult.name}</div>
+                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#64748B' }}>{topResult.handle} · {topResult.platform}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(`/influencers/${topResult.id}`)}
+                style={{
+                  marginLeft: 12,
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(56,189,248,0.2)',
+                  background: 'rgba(56,189,248,0.1)',
+                  color: '#BAE6FD',
+                  cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: 12,
+                }}
+              >
+                Open profile
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filter chips */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -200,7 +299,7 @@ export default function InfluencerSearch() {
                   {risk}
                 </div>
                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#64748B' }}>
-                  {influencerData.filter(i => i.risk === risk).length}
+                  {influencers.filter(i => i.risk === risk).length}
                 </span>
               </div>
             ))}
@@ -227,10 +326,20 @@ export default function InfluencerSearch() {
           variants={{ container: { staggerChildren: 0.07 }, show: {} }}
           initial="container"
           animate="container"
+          data-search-results
           style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignContent: 'start' }}
         >
           <AnimatePresence mode="popLayout">
-            {filtered.map(inf => (
+            {filtered.length === 0 ? (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <GlassCard style={{ padding: 28, textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 18, color: '#fff', marginBottom: 8 }}>No creators matched your search</div>
+                  <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#64748B' }}>
+                    Try a different name, platform, niche, or lower the score filter.
+                  </div>
+                </GlassCard>
+              </div>
+            ) : filtered.map(inf => (
               <motion.div
                 key={inf.id}
                 layout
@@ -239,6 +348,7 @@ export default function InfluencerSearch() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.35 }}
                 className="glass-card"
+                onClick={() => navigate(`/influencers/${inf.id}`)}
                 style={{ padding: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
               >
                 {/* Animated ring */}

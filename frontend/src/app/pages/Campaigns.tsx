@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Rocket, TrendingUp, DollarSign, Users, Plus } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
-import campaignData from '../../data/campaigns.json';
+import { api } from '../services/api';
 
 const statusConfig: Record<string, { bg: string; border: string; text: string; label: string }> = {
   active: { bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.25)', text: '#BAE6FD', label: 'Active' },
@@ -13,7 +13,7 @@ const statusConfig: Record<string, { bg: string; border: string; text: string; l
 
 const ganttMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
 
-function GanttBar({ campaign }: { campaign: typeof campaignData[0] }) {
+function GanttBar({ campaign }: { campaign: any }) {
   const start = new Date(campaign.startDate);
   const end = new Date(campaign.endDate);
   const now = new Date('2026-05-30');
@@ -49,6 +49,29 @@ function GanttBar({ campaign }: { campaign: typeof campaignData[0] }) {
 
 export default function Campaigns() {
   const [filter, setFilter] = useState<'all' | 'active' | 'paused' | 'complete'>('all');
+  const [campaignData, setCampaignData] = useState<any[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadCampaigns() {
+      try {
+        const data = await api.getCampaigns();
+        if (mounted) {
+          setCampaignData(data);
+        }
+      } catch (error) {
+        console.error('Failed to load campaigns:', error);
+      }
+    }
+
+    loadCampaigns();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const filtered = filter === 'all' ? campaignData : campaignData.filter(c => c.status === filter);
 
   const totalBudget = campaignData.reduce((a, c) => a + c.budget, 0);

@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link2, Zap, Building2, Target } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
 import { AvatarRing } from '../components/AvatarRing';
 import { AIScoreGauge } from '../components/AIScoreGauge';
-import brandsData from '../../data/brands.json';
-import influencerData from '../../data/influencers.json';
+import { api } from '../services/api';
 
 function MatchScoreCircle({ score, size = 80 }: { score: number; size?: number }) {
   const r = size / 2 - 8;
@@ -58,23 +57,54 @@ const matchDimensions = [
 ];
 
 export default function BrandMatching() {
-  const [selectedBrand, setSelectedBrand] = useState(brandsData[0]);
+  const [brands, setBrands] = useState<any[]>([]);
+  const [influencers, setInfluencers] = useState<any[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<any | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [matches, setMatches] = useState<typeof influencerData>([]);
+  const [matches, setMatches] = useState<any[]>([]);
 
-  const runMatch = () => {
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadData() {
+      try {
+        const [brandData, influencerData] = await Promise.all([api.getBrands(), api.getInfluencers()]);
+        if (mounted) {
+          setBrands(brandData);
+          setInfluencers(influencerData);
+          setSelectedBrand(brandData[0] || null);
+        }
+      } catch (error) {
+        console.error('Failed to load brand matching data:', error);
+      }
+    }
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const runMatch = async () => {
+    if (!selectedBrand) return;
     setScanning(true);
     setMatches([]);
-    setTimeout(() => {
-      const scored = influencerData.filter(inf =>
-        selectedBrand.targetNiches.some(n => inf.niche.includes(n) || inf.categories.includes(n)) &&
-        inf.aiScore >= selectedBrand.minAiScore &&
-        inf.followers >= selectedBrand.minFollowers
-      ).slice(0, 6);
-      setMatches(scored);
+    try {
+      const result = await api.matchBrand(selectedBrand.id);
+      const scored = (result.matches || []).map((match: any) => {
+        const found = influencers.find(inf => inf.name === match.influencer || inf.handle === match.influencer);
+        return found ? { ...found, matchScore: match.score } : { name: match.influencer, matchScore: match.score };
+      });
+      setMatches(scored.slice(0, 6));
+    } finally {
       setScanning(false);
-    }, 3200);
+    }
   };
+
+  if (!selectedBrand) {
+    return <div style={{ padding: 28, color: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>Loading brand matching engine...</div>;
+  }
 
   return (
     <motion.div
@@ -96,7 +126,7 @@ export default function BrandMatching() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <GlassCard style={{ padding: 20 }}>
             <div className="label-caps" style={{ marginBottom: 16 }}>SELECT BRAND</div>
-            {brandsData.map(brand => (
+            {brands.map(brand => (
               <div
                 key={brand.id}
                 onClick={() => setSelectedBrand(brand)}
@@ -140,7 +170,7 @@ export default function BrandMatching() {
               </div>
             ))}
             <div style={{ marginTop: 16, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {selectedBrand.targetNiches.map(n => (
+              {selectedBrand.targetNiches.map((n: string) => (
                 <span key={n} style={{
                   padding: '2px 8px',
                   background: 'rgba(56,189,248,0.06)',
@@ -228,11 +258,11 @@ export default function BrandMatching() {
                 animate={{ opacity: 1, y: 0 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
               >
-                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#94A3B8' }}>
+                  <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#94A3B8' }}>
                   <span style={{ color: '#22D3EE', fontWeight: 500 }}>{matches.length} perfect matches</span> found for {selectedBrand.name}
                 </div>
                 {matches.map((inf, i) => {
-                  const matchScore = Math.min(99, Math.round(inf.aiScore * 0.6 + inf.authenticity * 0.4 - i * 2));
+                  const matchScore = inf.matchScore ?? Math.min(99, Math.round((inf.aiScore || 80) * 0.6 + (inf.authenticity || 80) * 0.4 - i * 2));
                   const dims = matchDimensions.map(d => ({
                     name: d,
                     score: Math.round(60 + Math.random() * 38),

@@ -1,5 +1,6 @@
 import { useState, useEffect, memo } from 'react';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
@@ -10,10 +11,7 @@ import { GlassCard } from '../components/GlassCard';
 import { AvatarRing } from '../components/AvatarRing';
 import { SparkLine } from '../components/SparkLine';
 import { AIScoreGauge } from '../components/AIScoreGauge';
-import metrics from '../../data/dashboardMetrics.json';
-import influencers from '../../data/influencers.json';
-import campaigns from '../../data/campaigns.json';
-import activityFeed from '../../data/activityFeed.json';
+import { api } from '../services/api';
 
 const PIE_COLORS = ['#38BDF8', '#BAE6FD', '#0EA5E9', '#0369A1'];
 
@@ -30,7 +28,7 @@ const CustomTooltip = memo(({ active, payload, label }: any) => {
       <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#64748B', marginBottom: 6 }}>{label}</div>
       {payload.map((p: any, i: number) => (
         <div key={i} style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: p.color || '#38BDF8' }}>
-          {p.name}: {p.value}{p.name === 'value' ? '%' : ''}
+          {p.name}: {p.value}{p.name === 'Engagement' ? '%' : ''}
         </div>
       ))}
     </div>
@@ -38,31 +36,58 @@ const CustomTooltip = memo(({ active, payload, label }: any) => {
 });
 
 const quickActions = [
-  { label: 'New Campaign', icon: Rocket },
-  { label: 'Find Creators', icon: Users },
-  { label: 'Run AI Scan', icon: Zap },
-  { label: 'View Trends', icon: TrendingUp },
-  { label: 'Match Brand', icon: ArrowUpRight },
-  { label: 'Export Report', icon: ArrowUpRight },
+  { label: 'New Campaign', icon: Rocket, route: '/campaigns' },
+  { label: 'Find Creators', icon: Users, route: '/influencers' },
+  { label: 'Run AI Scan', icon: Zap, route: '/authenticity' },
+  { label: 'View Trends', icon: TrendingUp, route: '/dashboard' },
+  { label: 'Match Brand', icon: ArrowUpRight, route: '/brand-matching' },
+  { label: 'Export Report', icon: ArrowUpRight, route: '/dashboard' },
 ];
 
 export default function Dashboard() {
-  const [feedItems, setFeedItems] = useState(activityFeed.slice(0, 8));
+  const [metricsData, setMetricsData] = useState<any>(null);
+  const [influencerList, setInfluencerList] = useState<any[]>([]);
+  const [campaignList, setCampaignList] = useState<any[]>([]);
+  const [feedItems, setFeedItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   useEffect(() => {
+    async function loadData() {
+      try {
+        const dash = await api.getDashboard();
+        const infs = await api.getInfluencers();
+        const camps = await api.getCampaigns();
+        
+        setMetricsData(dash.metrics);
+        setFeedItems(dash.activity_feed.slice(0, 8));
+        setInfluencerList(infs);
+        setCampaignList(camps);
+      } catch (err) {
+        console.error('Failed to load dashboard metrics:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (feedItems.length === 0) return;
     const interval = setInterval(() => {
       const newItem = {
         id: Date.now(),
         type: ['info', 'success', 'alert'][Math.floor(Math.random() * 3)] as string,
-        message: activityFeed[Math.floor(Math.random() * activityFeed.length)].message,
+        message: feedItems[Math.floor(Math.random() * feedItems.length)]?.message || 'AI intelligence calculation updated',
         time: 'just now',
       };
       setFeedItems(prev => [newItem, ...prev.slice(0, 11)]);
-    }, 5000);
+    }, 8000);
     return () => clearInterval(interval);
-  }, []);
+  }, [feedItems]);
 
   const dotColors: Record<string, string> = {
     info: '#38BDF8',
@@ -75,6 +100,35 @@ export default function Dashboard() {
     paused: '#64748B',
     complete: '#38BDF8',
   };
+
+  if (loading || !metricsData) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        minHeight: 500,
+        gap: 16,
+      }}>
+        <div style={{
+          width: 32,
+          height: 32,
+          borderRadius: '50%',
+          border: '3px solid rgba(56,189,248,0.1)',
+          borderTopColor: '#38BDF8',
+          animation: 'spin 1s linear infinite',
+        }} />
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#64748B' }}>
+          Initializing AI Intelligence Engines...
+        </span>
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -124,10 +178,10 @@ export default function Dashboard() {
 
       {/* KPI Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-        <KPICard label="Influencers Tracked" value={2400000} suffix="+" trend="up" trendValue="+12.4%" icon={<Users size={20} />} delay={0} />
-        <KPICard label="Active Campaigns" value={1847} trend="up" trendValue="+8.1%" icon={<Rocket size={20} />} delay={0.08} />
-        <KPICard label="Avg Engagement Rate" value={6.8} suffix="%" decimals={1} trend="up" trendValue="+0.6pp" icon={<TrendingUp size={20} />} delay={0.16} />
-        <KPICard label="AI Content Generated" value={3291} trend="up" trendValue="+24%" icon={<Zap size={20} />} delay={0.24} />
+        <KPICard label="Influencers Tracked" value={metricsData.kpis?.influencersTracked || 2400000} suffix="+" trend="up" trendValue="+12.4%" icon={<Users size={20} />} delay={0} />
+        <KPICard label="Active Campaigns" value={metricsData.kpis?.activeCampaigns || 1847} trend="up" trendValue="+8.1%" icon={<Rocket size={20} />} delay={0.08} />
+        <KPICard label="Avg Engagement Rate" value={metricsData.kpis?.avgEngagement || 6.8} suffix="%" decimals={1} trend="up" trendValue="+0.6pp" icon={<TrendingUp size={20} />} delay={0.16} />
+        <KPICard label="AI Content Generated" value={metricsData.kpis?.contentGenerated || 3291} trend="up" trendValue="+24%" icon={<Zap size={20} />} delay={0.24} />
       </div>
 
       {/* Charts Row */}
@@ -151,7 +205,7 @@ export default function Dashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={metrics.engagementOverTime}>
+            <AreaChart data={metricsData.engagementOverTime}>
               <defs>
                 <linearGradient id="engGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.3} />
@@ -173,7 +227,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={160}>
               <PieChart>
                 <Pie
-                  data={metrics.platformSplit}
+                  data={metricsData.platformSplit}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
@@ -181,7 +235,7 @@ export default function Dashboard() {
                   paddingAngle={3}
                   dataKey="value"
                 >
-                  {metrics.platformSplit.map((_, i) => (
+                  {metricsData.platformSplit.map((_: any, i: number) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
@@ -190,7 +244,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {metrics.platformSplit.map((p, i) => (
+            {metricsData.platformSplit.map((p: any, i: number) => (
               <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, background: PIE_COLORS[i] }} />
@@ -233,7 +287,7 @@ export default function Dashboard() {
           }}>
             {feedItems.map((item, i) => (
               <motion.div
-                key={item.id}
+                key={item.id || i}
                 initial={i === 0 ? { opacity: 0, x: 16 } : {}}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4 }}
@@ -253,7 +307,7 @@ export default function Dashboard() {
                     {item.message}
                   </div>
                   <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#334155', marginTop: 2 }}>
-                    {item.time}
+                    {item.time || 'just now'}
                   </div>
                 </div>
               </motion.div>
@@ -265,7 +319,7 @@ export default function Dashboard() {
         <GlassCard style={{ padding: 24 }}>
           <h3 style={{ fontSize: 15, color: '#fff', margin: '0 0 8px' }}>Performance Radar</h3>
           <ResponsiveContainer width="100%" height={230}>
-            <RadarChart data={metrics.radarData}>
+            <RadarChart data={metricsData.radarData}>
               <PolarGrid stroke="rgba(56,189,248,0.08)" />
               <PolarAngleAxis dataKey="subject" tick={{ fontFamily: 'Inter', fontSize: 11, fill: '#64748B' }} />
               <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
@@ -278,7 +332,7 @@ export default function Dashboard() {
         <GlassCard style={{ padding: 24 }}>
           <h3 style={{ fontSize: 15, color: '#fff', margin: '0 0 20px' }}>Top Niches</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {metrics.topNiches.map(niche => (
+            {metricsData.topNiches.map((niche: any) => (
               <div key={niche.name}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#94A3B8' }}>{niche.name}</span>
@@ -322,7 +376,7 @@ export default function Dashboard() {
                 <span key={h} className="label-caps" style={{ fontSize: 10 }}>{h}</span>
               ))}
             </div>
-            {influencers.slice(0, 5).map(inf => (
+            {influencerList.slice(0, 5).map(inf => (
               <div key={inf.id} style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 80px 80px 80px',
@@ -367,7 +421,7 @@ export default function Dashboard() {
             <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#38BDF8', cursor: 'pointer' }}>View all →</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {campaigns.slice(0, 5).map(camp => (
+            {campaignList.slice(0, 5).map(camp => (
               <div key={camp.id} style={{
                 padding: '12px',
                 background: 'rgba(8,12,21,0.6)',
@@ -410,11 +464,13 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <GlassCard style={{ padding: 24 }}>
           <h3 style={{ fontSize: 15, color: '#fff', margin: '0 0 16px' }}>Quick Actions</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ gridTemplateColumns: '1fr 1fr', display: 'grid', gap: 10 }}>
             {quickActions.map(action => (
-              <motion.div
+              <motion.button
+                type="button"
                 key={action.label}
                 whileHover={{ scale: 1.02, borderColor: 'rgba(56,189,248,0.3)' }}
+                onClick={() => navigate(action.route)}
                 style={{
                   padding: '14px 12px',
                   background: 'rgba(8,12,21,0.6)',
@@ -427,7 +483,7 @@ export default function Dashboard() {
               >
                 <action.icon size={18} color="#38BDF8" style={{ margin: '0 auto 8px' }} />
                 <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#94A3B8' }}>{action.label}</div>
-              </motion.div>
+              </motion.button>
             ))}
           </div>
         </GlassCard>

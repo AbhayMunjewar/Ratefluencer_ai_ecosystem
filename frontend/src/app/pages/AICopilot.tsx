@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bot, Zap, Send, RefreshCw, Copy, CheckCircle } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
-import aiOutputsData from '../../data/aiOutputs.json';
+import { api } from '../services/api';
 
 const pipelines = [
   { id: 'hook', label: 'Viral Hook Generator', desc: 'Generate high-converting hooks' },
@@ -30,7 +30,7 @@ export default function AICopilot() {
   const [platform, setPlatform] = useState('TikTok');
   const [topic, setTopic] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [outputs, setOutputs] = useState(aiOutputsData.slice(0, 2));
+  const [outputs, setOutputs] = useState<any[]>([]);
   const [log, setLog] = useState<TerminalLine[]>(initialLog);
   const [copied, setCopied] = useState<string | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -42,6 +42,27 @@ export default function AICopilot() {
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [log]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadOutputs() {
+      try {
+        const seedOutputs = await api.getAIOutputs();
+        if (mounted) {
+          setOutputs(seedOutputs.slice(0, 2));
+        }
+      } catch (error) {
+        console.error('Failed to load AI outputs:', error);
+      }
+    }
+
+    loadOutputs();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const generate = () => {
     if (!topic.trim()) return;
@@ -66,7 +87,7 @@ export default function AICopilot() {
         { id: 'g2', type: pipeline.id, platform, content: `I tested every ${topic} strategy for 30 days. Here's what actually worked (data inside).`, viralScore: 87 + Math.round(Math.random() * 8), predictedReach: 1200000 + Math.round(Math.random() * 1800000) },
         { id: 'g3', type: pipeline.id, platform, content: `Stop doing ${topic} this way. The algorithm rewards creators who understand this one shift.`, viralScore: 89 + Math.round(Math.random() * 7), predictedReach: 900000 + Math.round(Math.random() * 1400000) },
       ];
-      setOutputs(generated as typeof aiOutputsData);
+      setOutputs(generated);
       setGenerating(false);
     }, 3200);
   };

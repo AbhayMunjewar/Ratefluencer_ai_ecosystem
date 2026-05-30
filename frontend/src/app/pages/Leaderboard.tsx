@@ -1,17 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { AvatarRing } from '../components/AvatarRing';
 import { AIScoreGauge } from '../components/AIScoreGauge';
 import { SparkLine } from '../components/SparkLine';
 import { GlassCard } from '../components/GlassCard';
-import leaderboardData from '../../data/leaderboard.json';
-import influencerData from '../../data/influencers.json';
-
-const growthMap: Record<string, number[]> = {};
-influencerData.forEach(inf => {
-  growthMap[inf.handle] = inf.growth;
-});
+import { api } from '../services/api';
 
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return <div style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: 18, color: '#BAE6FD', textShadow: '0 0 12px rgba(186,230,253,0.6)' }}>#1</div>;
@@ -37,6 +31,43 @@ function RankChange({ rank, prev }: { rank: number; prev: number }) {
 
 export default function Leaderboard() {
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter'>('month');
+  const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
+  const [influencers, setInfluencers] = useState<any[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadData() {
+      try {
+        const [leaderboard, influencerList] = await Promise.all([api.getLeaderboard(), api.getInfluencers()]);
+        if (mounted) {
+          setLeaderboardData(leaderboard);
+          setInfluencers(influencerList);
+        }
+      } catch (error) {
+        console.error('Failed to load leaderboard data:', error);
+      }
+    }
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const growthMap = useMemo(() => {
+    const map: Record<string, number[]> = {};
+    influencers.forEach(inf => {
+      map[inf.handle] = inf.growth;
+    });
+    return map;
+  }, [influencers]);
+
+  if (leaderboardData.length === 0) {
+    return <div style={{ padding: 28, color: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>Loading leaderboard...</div>;
+  }
+
   const podium = leaderboardData.slice(0, 3);
   const rest = leaderboardData.slice(3);
 
