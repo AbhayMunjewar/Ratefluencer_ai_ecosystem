@@ -1,0 +1,10 @@
+[
+  { "id": "b1", "name": "Maison Éclat", "industry": "Luxury Fashion", "budget": 850000, "targetNiches": ["Fashion","Luxury","Beauty"], "minFollowers": 500000, "minAiScore": 88, "campaigns": 12, "avgRoi": 4.2 },
+  { "id": "b2", "name": "Apex Devices", "industry": "Consumer Electronics", "budget": 1200000, "targetNiches": ["Tech","Gaming","Innovation"], "minFollowers": 200000, "minAiScore": 85, "campaigns": 8, "avgRoi": 3.8 },
+  { "id": "b3", "name": "Lumière Labs", "industry": "Skincare", "budget": 420000, "targetNiches": ["Beauty","Wellness","Lifestyle"], "minFollowers": 100000, "minAiScore": 90, "campaigns": 24, "avgRoi": 5.6 },
+  { "id": "b4", "name": "Forge Nutrition", "industry": "Sports Nutrition", "budget": 280000, "targetNiches": ["Fitness","Health","Sports"], "minFollowers": 50000, "minAiScore": 85, "campaigns": 18, "avgRoi": 3.9 },
+  { "id": "b5", "name": "EcoVault", "industry": "Sustainable Products", "budget": 180000, "targetNiches": ["Sustainability","Environment","Lifestyle"], "minFollowers": 30000, "minAiScore": 92, "campaigns": 6, "avgRoi": 4.8 },
+  { "id": "b6", "name": "Axis Collective", "industry": "Streetwear", "budget": 620000, "targetNiches": ["Streetwear","Culture","Fashion"], "minFollowers": 200000, "minAiScore": 82, "campaigns": 15, "avgRoi": 3.4 },
+  { "id": "b7", "name": "Volta Kitchen", "industry": "Kitchen Appliances", "budget": 340000, "targetNiches": ["Food","Cooking","Lifestyle"], "minFollowers": 100000, "minAiScore": 84, "campaigns": 10, "avgRoi": 4.1 },
+  { "id": "b8", "name": "Nexus Finance", "industry": "FinTech", "budget": 920000, "targetNiches": ["Finance","Business","Tech"], "minFollowers": 50000, "minAiScore": 93, "campaigns": 4, "avgRoi": 6.2 }
+]

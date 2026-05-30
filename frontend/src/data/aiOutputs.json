@@ -1,0 +1,42 @@
+[
+  {
+    "id": "ao1",
+    "type": "hook",
+    "platform": "TikTok",
+    "content": "The skincare industry doesn't want you to know this one ingredient swap...",
+    "viralScore": 94,
+    "predictedReach": 2400000
+  },
+  {
+    "id": "ao2",
+    "type": "caption",
+    "platform": "Instagram",
+    "content": "Luxury isn't a price point. It's a perspective. New collection, same uncompromising vision.",
+    "viralScore": 87,
+    "predictedReach": 890000
+  },
+  {
+    "id": "ao3",
+    "type": "script",
+    "platform": "YouTube",
+    "content": "Today I'm testing 6 AI-powered investment tools so you don't have to. The results genuinely surprised me.",
+    "viralScore": 91,
+    "predictedReach": 1200000
+  },
+  {
+    "id": "ao4",
+    "type": "hook",
+    "platform": "TikTok",
+    "content": "I gained 100k followers in 30 days using this exact content calendar...",
+    "viralScore": 96,
+    "predictedReach": 4800000
+  },
+  {
+    "id": "ao5",
+    "type": "caption",
+    "platform": "Instagram",
+    "content": "The quiet confidence of knowing exactly what you're building. Zero noise. All signal.",
+    "viralScore": 83,
+    "predictedReach": 620000
+  }
+]

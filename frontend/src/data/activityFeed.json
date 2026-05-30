@@ -1,0 +1,14 @@
+[
+  { "id": 1, "type": "info", "message": "New creator @stormvz indexed — Streetwear niche, 3.1M followers", "time": "2s ago" },
+  { "id": 2, "type": "success", "message": "Campaign 'Winter Luxe' hit 8.4% engagement threshold", "time": "18s ago" },
+  { "id": 3, "type": "info", "message": "AI scan complete — @elarakim authenticity score: 100/100", "time": "34s ago" },
+  { "id": 4, "type": "alert", "message": "@ash_creator bot follower anomaly detected — 24% suspicious accounts", "time": "1m ago" },
+  { "id": 5, "type": "success", "message": "Brand match: Lumière Labs ↔ @ariavoss — 94% compatibility", "time": "2m ago" },
+  { "id": 6, "type": "info", "message": "Growth prediction updated for @finnadeyemi — 572% 12-month projection", "time": "3m ago" },
+  { "id": 7, "type": "success", "message": "Campaign ROI alert: 'Skin Ritual Launch' achieved 5.8x return", "time": "5m ago" },
+  { "id": 8, "type": "info", "message": "Leaderboard updated — @riverchen enters top 3 globally", "time": "7m ago" },
+  { "id": 9, "type": "alert", "message": "@zara_h engagement velocity declined 18% — recommend review", "time": "9m ago" },
+  { "id": 10, "type": "info", "message": "New niche trend detected: Cold-climate travel content +340% reach", "time": "11m ago" },
+  { "id": 11, "type": "success", "message": "AI Copilot generated 12 viral hooks for 'TechLaunch X Series'", "time": "14m ago" },
+  { "id": 12, "type": "info", "message": "@novasingh 30-day follower growth: +67,420 — above 98th percentile", "time": "17m ago" }
+]
