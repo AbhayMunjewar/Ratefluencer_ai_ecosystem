@@ -1,1 +1,2 @@
 rateinfluencer hackthonn
+ai ecosystem
