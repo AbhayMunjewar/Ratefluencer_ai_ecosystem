@@ -1,0 +1,38 @@
+[
+  {
+    "id": "yt_1",
+    "youtubeChannelId": "UCX6OQ3DkcsbYNE6H8uQQuVA",
+    "niche": "Entertainment",
+    "categories": ["Entertainment", "Charity"]
+  },
+  {
+    "id": "yt_2",
+    "youtubeChannelId": "UCBJycsmduvYEL83R_U4JriQ",
+    "niche": "Tech",
+    "categories": ["Tech", "Reviews"]
+  },
+  {
+    "id": "yt_3",
+    "youtubeChannelId": "UCoSrY_IQQVuvFUXiv6zA1Qg",
+    "niche": "Beauty",
+    "categories": ["Beauty", "Lifestyle"]
+  },
+  {
+    "id": "yt_4",
+    "youtubeChannelId": "UC-lHJZR3Gqxm24_Vd_AJ5Yw",
+    "niche": "Gaming",
+    "categories": ["Gaming", "Entertainment"]
+  },
+  {
+    "id": "yt_5",
+    "youtubeChannelId": "UCq-Fj5jknLsUf-MWSy4_brA",
+    "niche": "Finance",
+    "categories": ["Finance", "Education"]
+  },
+  {
+    "id": "yt_6",
+    "youtubeChannelId": "UCJ5v_MCYcGNUfTRZMAu63kQ",
+    "niche": "Food",
+    "categories": ["Food", "Cooking"]
+  }
+]

@@ -1,0 +1,398 @@
+[
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @virat.kohli score: 90/100 (Low risk)",
+    "time": "Just now",
+    "id": 66
+  },
+  {
+    "type": "alert",
+    "message": "AI authenticity scan complete — @jungkook.97 score: 63/100 (Medium risk)",
+    "time": "Just now",
+    "id": 65
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @cristiano Master Ratefluencer score computed: 69/100",
+    "time": "Just now",
+    "id": 64
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ jackharlow (73% match)",
+    "time": "Just now",
+    "id": 63
+  },
+  {
+    "type": "alert",
+    "message": "AI authenticity scan complete — @jypestraykids score: 66/100 (Medium risk)",
+    "time": "Just now",
+    "id": 62
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @cristiano score: 91/100 (Low risk)",
+    "time": "Just now",
+    "id": 61
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @cristiano Master Ratefluencer score computed: 69/100",
+    "time": "Just now",
+    "id": 60
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ jackharlow (73% match)",
+    "time": "Just now",
+    "id": 59
+  },
+  {
+    "type": "alert",
+    "message": "AI authenticity scan complete — @jypestraykids score: 66/100 (Medium risk)",
+    "time": "Just now",
+    "id": 58
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @cristiano score: 91/100 (Low risk)",
+    "time": "Just now",
+    "id": 57
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @433 Master Ratefluencer score computed: 68/100",
+    "time": "Just now",
+    "id": 56
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ Yef (71% match)",
+    "time": "Just now",
+    "id": 55
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @mrbeast score: 85/100 (Low risk)",
+    "time": "Just now",
+    "id": 54
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @433 score: 89/100 (Low risk)",
+    "time": "Just now",
+    "id": 53
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @mrbeast score: 85/100 (Low risk)",
+    "time": "Just now",
+    "id": 52
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @433 score: 89/100 (Low risk)",
+    "time": "Just now",
+    "id": 51
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @433 Master Ratefluencer score computed: 68/100",
+    "time": "Just now",
+    "id": 50
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ addisonraee (68% match)",
+    "time": "Just now",
+    "id": 49
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @mrbeast score: 85/100 (Low risk)",
+    "time": "Just now",
+    "id": 48
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @433 score: 89/100 (Low risk)",
+    "time": "Just now",
+    "id": 47
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @433 Master Ratefluencer score computed: 68/100",
+    "time": "Just now",
+    "id": 46
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ addisonraee (68% match)",
+    "time": "Just now",
+    "id": 45
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @mrbeast score: 85/100 (Low risk)",
+    "time": "Just now",
+    "id": 44
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @433 score: 89/100 (Low risk)",
+    "time": "Just now",
+    "id": 43
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @433 Master Ratefluencer score computed: 68/100",
+    "time": "Just now",
+    "id": 42
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ addisonraee (68% match)",
+    "time": "Just now",
+    "id": 41
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @mrbeast score: 85/100 (Low risk)",
+    "time": "Just now",
+    "id": 40
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @433 score: 89/100 (Low risk)",
+    "time": "Just now",
+    "id": 39
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @433 Master Ratefluencer score computed: 68/100",
+    "time": "Just now",
+    "id": 38
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ addisonraee (68% match)",
+    "time": "Just now",
+    "id": 37
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @mrbeast score: 85/100 (Low risk)",
+    "time": "Just now",
+    "id": 36
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @433 score: 89/100 (Low risk)",
+    "time": "Just now",
+    "id": 35
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @433 Master Ratefluencer score computed: 68/100",
+    "time": "Just now",
+    "id": 34
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ addisonraee (68% match)",
+    "time": "Just now",
+    "id": 33
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @mrbeast score: 85/100 (Low risk)",
+    "time": "Just now",
+    "id": 32
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @433 score: 89/100 (Low risk)",
+    "time": "Just now",
+    "id": 31
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @ariavoss Master Ratefluencer score computed: 83/100",
+    "time": "Just now",
+    "id": 30
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ Luna Serrano (79% match)",
+    "time": "Just now",
+    "id": 29
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @dexmonroe score: 80/100 (Medium risk)",
+    "time": "Just now",
+    "id": 28
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @ariavoss score: 80/100 (Medium risk)",
+    "time": "Just now",
+    "id": 27
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ Luna Serrano (79% match)",
+    "time": "Just now",
+    "id": 26
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @ariavoss score: 80/100 (Medium risk)",
+    "time": "Just now",
+    "id": 25
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @ariavoss Master Ratefluencer score computed: 83/100",
+    "time": "Just now",
+    "id": 24
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @ariavoss score: 80/100 (Medium risk)",
+    "time": "Just now",
+    "id": 23
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @ariavoss Master Ratefluencer score computed: 83/100",
+    "time": "Just now",
+    "id": 22
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Lumière Labs ↔ Luna Serrano (79% match)",
+    "time": "Just now",
+    "id": 21
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @dexmonroe score: 80/100 (Medium risk)",
+    "time": "Just now",
+    "id": 20
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @ariavoss score: 81/100 (Medium risk)",
+    "time": "Just now",
+    "id": 19
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @ariavoss score: 99/100 (Low risk)",
+    "time": "Just now",
+    "id": 18
+  },
+  {
+    "type": "success",
+    "message": "Ecosystem index updated: @ariavoss Master Ratefluencer score computed: 92/100",
+    "time": "Just now",
+    "id": 17
+  },
+  {
+    "type": "success",
+    "message": "Campaign 'Winter Luxe Collection' ROI projection: 96% fit for @ariavoss",
+    "time": "Just now",
+    "id": 16
+  },
+  {
+    "type": "success",
+    "message": "High compatibility brand match: Maison Éclat ↔ Aria Voss (100% match)",
+    "time": "Just now",
+    "id": 15
+  },
+  {
+    "type": "info",
+    "message": "Growth prediction updated for @ariavoss — scenario: 'aggressive' resulting in +2,246,208 followers",
+    "time": "Just now",
+    "id": 14
+  },
+  {
+    "type": "info",
+    "message": "AI authenticity scan complete — @ariavoss score: 98/100 (Low risk)",
+    "time": "Just now",
+    "id": 13
+  },
+  {
+    "id": 1,
+    "type": "info",
+    "message": "New creator @stormvz indexed — Streetwear niche, 3.1M followers",
+    "time": "2s ago"
+  },
+  {
+    "id": 2,
+    "type": "success",
+    "message": "Campaign 'Winter Luxe' hit 8.4% engagement threshold",
+    "time": "18s ago"
+  },
+  {
+    "id": 3,
+    "type": "info",
+    "message": "AI scan complete — @elarakim authenticity score: 100/100",
+    "time": "34s ago"
+  },
+  {
+    "id": 4,
+    "type": "alert",
+    "message": "@ash_creator bot follower anomaly detected — 24% suspicious accounts",
+    "time": "1m ago"
+  },
+  {
+    "id": 5,
+    "type": "success",
+    "message": "Brand match: Lumière Labs ↔ @ariavoss — 94% compatibility",
+    "time": "2m ago"
+  },
+  {
+    "id": 6,
+    "type": "info",
+    "message": "Growth prediction updated for @finnadeyemi — 572% 12-month projection",
+    "time": "3m ago"
+  },
+  {
+    "id": 7,
+    "type": "success",
+    "message": "Campaign ROI alert: 'Skin Ritual Launch' achieved 5.8x return",
+    "time": "5m ago"
+  },
+  {
+    "id": 8,
+    "type": "info",
+    "message": "Leaderboard updated — @riverchen enters top 3 globally",
+    "time": "7m ago"
+  },
+  {
+    "id": 9,
+    "type": "alert",
+    "message": "@zara_h engagement velocity declined 18% — recommend review",
+    "time": "9m ago"
+  },
+  {
+    "id": 10,
+    "type": "info",
+    "message": "New niche trend detected: Cold-climate travel content +340% reach",
+    "time": "11m ago"
+  },
+  {
+    "id": 11,
+    "type": "success",
+    "message": "AI Copilot generated 12 viral hooks for 'TechLaunch X Series'",
+    "time": "14m ago"
+  },
+  {
+    "id": 12,
+    "type": "info",
+    "message": "@novasingh 30-day follower growth: +67,420 — above 98th percentile",
+    "time": "17m ago"
+  }
+]

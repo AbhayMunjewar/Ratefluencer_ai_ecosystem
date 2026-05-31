@@ -1,0 +1,10 @@
+[
+  { "id": "t1", "topic": "Cold-Climate Travel Aesthetics", "niche": "Travel", "score": 94, "velocity": "+340%", "platforms": ["TikTok","Instagram"], "peakIn": "2 weeks" },
+  { "id": "t2", "topic": "AI-Generated Skincare Routines", "niche": "Beauty", "score": 91, "velocity": "+280%", "platforms": ["YouTube","TikTok"], "peakIn": "3 weeks" },
+  { "id": "t3", "topic": "Micro-Investment Explainers", "niche": "Finance", "score": 88, "velocity": "+210%", "platforms": ["YouTube","Twitter/X"], "peakIn": "1 week" },
+  { "id": "t4", "topic": "Sustainable Luxury Goods", "niche": "Fashion", "score": 86, "velocity": "+195%", "platforms": ["Instagram"], "peakIn": "4 weeks" },
+  { "id": "t5", "topic": "Nervous System Regulation", "niche": "Wellness", "score": 84, "velocity": "+178%", "platforms": ["TikTok","YouTube"], "peakIn": "2 weeks" },
+  { "id": "t6", "topic": "Dark Academia Style Revival", "niche": "Fashion", "score": 82, "velocity": "+165%", "platforms": ["TikTok","Instagram"], "peakIn": "3 weeks" },
+  { "id": "t7", "topic": "Home Fermentation & Gut Health", "niche": "Food", "score": 79, "velocity": "+142%", "platforms": ["YouTube","TikTok"], "peakIn": "5 weeks" },
+  { "id": "t8", "topic": "Budget Ultralight Backpacking", "niche": "Travel", "score": 76, "velocity": "+128%", "platforms": ["YouTube","Instagram"], "peakIn": "3 weeks" }
+]

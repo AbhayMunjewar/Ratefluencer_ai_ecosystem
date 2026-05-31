@@ -1,0 +1,17 @@
+[
+  { "rank": 1, "prev": 2, "name": "River Chen", "handle": "@riverchen", "platform": "TikTok", "niche": "Dance", "followers": 12400000, "aiScore": 98, "engagement": 13.2, "growth": "+18.4%", "country": "CN" },
+  { "rank": 2, "prev": 1, "name": "Ash Delacroix", "handle": "@ashdelacroix", "platform": "TikTok", "niche": "Comedy", "followers": 18700000, "aiScore": 94, "engagement": 15.6, "growth": "+12.1%", "country": "US" },
+  { "rank": 3, "prev": 5, "name": "Nyx Patel", "handle": "@nyxpatel", "platform": "TikTok", "niche": "Gaming", "followers": 8920000, "aiScore": 91, "engagement": 9.4, "growth": "+22.8%", "country": "IN" },
+  { "rank": 4, "prev": 3, "name": "Sofia Crane", "handle": "@sofiacrane", "platform": "TikTok", "niche": "Food", "followers": 6780000, "aiScore": 89, "engagement": 11.2, "growth": "+8.6%", "country": "FR" },
+  { "rank": 5, "prev": 6, "name": "Kai Nakamura", "handle": "@kai.nkm", "platform": "TikTok", "niche": "Tech", "followers": 5120000, "aiScore": 96, "engagement": 12.1, "growth": "+31.4%", "country": "JP" },
+  { "rank": 6, "prev": 4, "name": "Zara Holloway", "handle": "@zaraholloway", "platform": "Instagram", "niche": "Lifestyle", "followers": 4210000, "aiScore": 82, "engagement": 5.9, "growth": "+3.2%", "country": "UK" },
+  { "rank": 7, "prev": 8, "name": "Storm Vasquez", "handle": "@stormvz", "platform": "Instagram", "niche": "Streetwear", "followers": 3140000, "aiScore": 90, "engagement": 8.9, "growth": "+14.7%", "country": "MX" },
+  { "rank": 8, "prev": 9, "name": "Aria Voss", "handle": "@ariavoss", "platform": "Instagram", "niche": "Fashion", "followers": 2340000, "aiScore": 94, "engagement": 8.4, "growth": "+16.2%", "country": "US" },
+  { "rank": 9, "prev": 7, "name": "Theo Blackwood", "handle": "@theoblackwood", "platform": "Instagram", "niche": "Travel", "followers": 2890000, "aiScore": 88, "engagement": 7.1, "growth": "+7.9%", "country": "AU" },
+  { "rank": 10, "prev": 12, "name": "Cade Wren", "handle": "@cadewren", "platform": "YouTube", "niche": "DIY", "followers": 2100000, "aiScore": 92, "engagement": 8.7, "growth": "+19.3%", "country": "US" },
+  { "rank": 11, "prev": 10, "name": "Luna Serrano", "handle": "@lunaserr", "platform": "YouTube", "niche": "Beauty", "followers": 3890000, "aiScore": 89, "engagement": 6.2, "growth": "+5.8%", "country": "ES" },
+  { "rank": 12, "prev": 14, "name": "Nova Singh", "handle": "@novasingh", "platform": "Instagram", "niche": "Yoga", "followers": 1560000, "aiScore": 96, "engagement": 10.2, "growth": "+24.6%", "country": "IN" },
+  { "rank": 13, "prev": 11, "name": "Dex Monroe", "handle": "@dexmonroe", "platform": "Instagram", "niche": "Fitness", "followers": 1870000, "aiScore": 96, "engagement": 9.8, "growth": "+18.1%", "country": "US" },
+  { "rank": 14, "prev": 16, "name": "Finn Adeyemi", "handle": "@finnadeyemi", "platform": "YouTube", "niche": "Finance", "followers": 892000, "aiScore": 98, "engagement": 14.3, "growth": "+47.2%", "country": "NG" },
+  { "rank": 15, "prev": 13, "name": "Isla Fontaine", "handle": "@islafontaine", "platform": "YouTube", "niche": "Interior Design", "followers": 940000, "aiScore": 95, "engagement": 9.6, "growth": "+13.8%", "country": "CA" }
+]
