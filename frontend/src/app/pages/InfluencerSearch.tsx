@@ -83,6 +83,13 @@ export default function InfluencerSearch() {
   }, [influencers, query, platform, niche, follower, minScore]);
 
   const topResult = filtered[0];
+  const groupedFiltered = useMemo(() => {
+    return {
+      Instagram: filtered.filter(inf => inf.platform === 'Instagram'),
+      TikTok: filtered.filter(inf => inf.platform === 'TikTok'),
+      YouTube: filtered.filter(inf => inf.platform === 'YouTube'),
+    };
+  }, [filtered]);
   const activeFilters = [platform !== 'All', niche !== 'All', follower !== 'All', minScore > 0, query.trim().length > 0].filter(Boolean).length;
 
   const riskColors: Record<string, string> = {
@@ -327,7 +334,7 @@ export default function InfluencerSearch() {
           initial="container"
           animate="container"
           data-search-results
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignContent: 'start' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
         >
           <AnimatePresence mode="popLayout">
             {filtered.length === 0 ? (
@@ -339,18 +346,33 @@ export default function InfluencerSearch() {
                   </div>
                 </GlassCard>
               </div>
-            ) : filtered.map(inf => (
-              <motion.div
-                key={inf.id}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.35 }}
-                className="glass-card"
-                onClick={() => navigate(`/influencers/${inf.id}`)}
-                style={{ padding: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-              >
+            ) : (['Instagram', 'TikTok', 'YouTube'] as const).map(platformName => (
+              groupedFiltered[platformName].length > 0 && (
+                <div key={platformName}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 10,
+                  }}>
+                    <div style={{ fontFamily: 'Inter, sans-serif', color: '#BAE6FD', fontWeight: 600, fontSize: 14 }}>
+                      {platformName}
+                    </div>
+                    <div className="label-caps">{groupedFiltered[platformName].length} creators</div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                    {groupedFiltered[platformName].map(inf => (
+                      <motion.div
+                        key={inf.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.35 }}
+                        className="glass-card"
+                        onClick={() => navigate(`/influencers/${inf.id}`)}
+                        style={{ padding: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+                      >
                 {/* Animated ring */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                   <AvatarRing name={inf.name} size={44} animated />
@@ -421,7 +443,11 @@ export default function InfluencerSearch() {
                     </span>
                   ))}
                 </div>
-              </motion.div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )
             ))}
           </AnimatePresence>
         </motion.div>

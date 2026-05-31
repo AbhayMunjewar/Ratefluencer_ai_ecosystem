@@ -28,6 +28,7 @@ export default function AuthenticityAnalysis() {
   const [handle, setHandle] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [selectedInf, setSelectedInf] = useState<any | null>(null);
   const [influencers, setInfluencers] = useState<any[]>([]);
 
@@ -57,18 +58,56 @@ export default function AuthenticityAnalysis() {
     if (!handle.trim() || influencers.length === 0) return;
     setScanning(true);
     setScanned(false);
+    setScanError(null);
     try {
-      const found = influencers.find(i => i.handle.toLowerCase().includes(handle.toLowerCase().replace('@', '')));
-      if (found) {
-        const analysis = await api.analyzeAuthenticity(found.id);
+      let bestMatch = null;
+      let highestSimilarity = 0;
+      const cleanQuery = handle.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      for (const inf of influencers) {
+        const cleanHandle = inf.handle.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanName = inf.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        let similarity = 0;
+        if (cleanHandle === cleanQuery || cleanName === cleanQuery) {
+          similarity = 1.0;
+        } else if ((cleanHandle && cleanHandle.includes(cleanQuery)) || (cleanName && cleanName.includes(cleanQuery))) {
+          similarity = 0.9;
+        } else if ((cleanHandle && cleanQuery.includes(cleanHandle) && cleanHandle.length > 3) || (cleanName && cleanQuery.includes(cleanName) && cleanName.length > 3)) {
+          similarity = 0.8;
+        } else {
+          let intersection = 0;
+          const queryChars = cleanQuery.split('');
+          const infCharSet = new Set(cleanName.split(''));
+          for (const char of queryChars) {
+            if (infCharSet.has(char)) intersection++;
+          }
+          similarity = intersection / Math.max(cleanQuery.length, cleanName.length || 1);
+        }
+
+        if (similarity > highestSimilarity) {
+          highestSimilarity = similarity;
+          bestMatch = inf;
+        }
+      }
+
+      if (bestMatch && highestSimilarity > 0.45) {
+        const analysis = await api.analyzeAuthenticity(bestMatch.id);
         setSelectedInf({
-          ...found,
+          ...bestMatch,
           authenticity: analysis.authenticity_score,
           engagement: analysis.engagement_rate,
           risk: String(analysis.risk_level || '').toLowerCase(),
         });
+        setScanned(true);
+      } else {
+        setScanError(`No creator found matching "${handle}". Please try another handle.`);
+        setScanned(false);
       }
-      setScanned(true);
+    } catch (error) {
+      console.error(error);
+      setScanError('An error occurred during authentication scanning.');
+      setScanned(false);
     } finally {
       setScanning(false);
     }
@@ -201,6 +240,29 @@ export default function AuthenticityAnalysis() {
               </motion.div>
             ))}
           </div>
+        )}
+
+        {scanError && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              marginTop: 16,
+              padding: '12px 16px',
+              background: 'rgba(248,113,113,0.06)',
+              border: '1px solid rgba(248,113,113,0.2)',
+              borderRadius: 8,
+              color: '#F87171',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <AlertTriangle size={15} />
+            <span>{scanError}</span>
+          </motion.div>
         )}
       </GlassCard>
 

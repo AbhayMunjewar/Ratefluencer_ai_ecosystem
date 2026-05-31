@@ -73,6 +73,23 @@ export const api = {
   },
 
   /**
+   * GET /influencers/by-platform
+   */
+  async getInfluencersByPlatform() {
+    const groupedFallback = {
+      Instagram: localInfluencers.filter(i => i.platform === 'Instagram'),
+      TikTok: localInfluencers.filter(i => i.platform === 'TikTok'),
+      YouTube: localInfluencers.filter(i => i.platform === 'YouTube'),
+      counts: {
+        Instagram: localInfluencers.filter(i => i.platform === 'Instagram').length,
+        TikTok: localInfluencers.filter(i => i.platform === 'TikTok').length,
+        YouTube: localInfluencers.filter(i => i.platform === 'YouTube').length,
+      },
+    };
+    return request<any>('/influencers/by-platform', { method: 'GET' }, groupedFallback);
+  },
+
+  /**
    * GET /influencers/{id}
    */
   async getInfluencerById(id: string) {
