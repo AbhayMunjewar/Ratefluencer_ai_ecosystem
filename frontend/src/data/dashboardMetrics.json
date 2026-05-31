@@ -1,0 +1,44 @@
+{
+  "engagementOverTime": [
+    { "month": "Jun", "value": 5.2, "reach": 1840000 },
+    { "month": "Jul", "value": 5.8, "reach": 2100000 },
+    { "month": "Aug", "value": 6.1, "reach": 2340000 },
+    { "month": "Sep", "value": 5.9, "reach": 2280000 },
+    { "month": "Oct", "value": 6.4, "reach": 2580000 },
+    { "month": "Nov", "value": 6.8, "reach": 2790000 },
+    { "month": "Dec", "value": 7.2, "reach": 3120000 },
+    { "month": "Jan", "value": 6.9, "reach": 2940000 },
+    { "month": "Feb", "value": 7.4, "reach": 3380000 },
+    { "month": "Mar", "value": 7.8, "reach": 3720000 },
+    { "month": "Apr", "value": 8.1, "reach": 4010000 },
+    { "month": "May", "value": 8.4, "reach": 4280000 }
+  ],
+  "platformSplit": [
+    { "name": "Instagram", "value": 38 },
+    { "name": "TikTok", "value": 31 },
+    { "name": "YouTube", "value": 21 },
+    { "name": "Twitter/X", "value": 10 }
+  ],
+  "topNiches": [
+    { "name": "Fashion & Luxury", "count": 18420, "pct": 92 },
+    { "name": "Tech & Gaming", "count": 16890, "pct": 84 },
+    { "name": "Beauty & Wellness", "count": 15340, "pct": 77 },
+    { "name": "Food & Travel", "count": 13210, "pct": 66 },
+    { "name": "Finance & Crypto", "count": 11780, "pct": 59 },
+    { "name": "Fitness & Sports", "count": 10420, "pct": 52 }
+  ],
+  "radarData": [
+    { "subject": "Reach", "A": 87 },
+    { "subject": "Engage", "A": 92 },
+    { "subject": "Auth", "A": 96 },
+    { "subject": "Growth", "A": 84 },
+    { "subject": "ROI", "A": 89 },
+    { "subject": "Brand Fit", "A": 93 }
+  ],
+  "kpis": {
+    "influencersTracked": 2400000,
+    "activeCampaigns": 1847,
+    "avgEngagement": 6.8,
+    "contentGenerated": 3291
+  }
+}
