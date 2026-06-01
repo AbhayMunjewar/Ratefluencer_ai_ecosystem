@@ -12,6 +12,42 @@ const platforms = ['All', 'Instagram', 'TikTok', 'YouTube'];
 const niches = ['All', 'Fashion', 'Tech', 'Beauty', 'Fitness', 'Gaming', 'Finance', 'Food', 'Travel'];
 const followerRanges = ['All', '0–100K', '100K–1M', '1M–10M', '10M+'];
 const riskLabels = ['low', 'medium', 'high'];
+const platformSections = ['Instagram', 'TikTok', 'YouTube'] as const;
+
+function buildSearchableText(inf: any) {
+  return [inf.name, inf.handle, inf.niche, ...(inf.categories || []), inf.platform, inf.country]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+/** Token-based match so "mr beast" matches "MrBeast" and "@mrbeast". */
+function matchesSearchQuery(inf: any, query: string, skipTextMatch = false) {
+  if (!query || skipTextMatch || inf._fromLiveSearch) return true;
+  const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  const searchable = buildSearchableText(inf);
+  return tokens.every(token => searchable.includes(token.replace(/^@/, '')));
+}
+
+function mergeYouTubeResults(local: any[], live: any[]) {
+  const merged = [...local];
+  const seen = new Set(merged.map(item => item.youtubeChannelId || item.id));
+  for (const item of live) {
+    const key = item.youtubeChannelId || item.id;
+    if (key && seen.has(key)) continue;
+    merged.push({ ...item, _fromLiveSearch: true });
+    if (key) seen.add(key);
+  }
+  return merged;
+}
+
+function formatCompactNumber(value: number) {
+  if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}B`;
+  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+  return `${value}`;
+}
 
 export default function InfluencerSearch() {
   const navigate = useNavigate();
@@ -21,6 +57,9 @@ export default function InfluencerSearch() {
   const [follower, setFollower] = useState('All');
   const [minScore, setMinScore] = useState(0);
   const [influencers, setInfluencers] = useState<any[]>([]);
+  const [liveYouTubeResults, setLiveYouTubeResults] = useState<any[] | null>(null);
+  const [liveYouTubeLoading, setLiveYouTubeLoading] = useState(false);
+  const [liveYouTubeError, setLiveYouTubeError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -43,18 +82,65 @@ export default function InfluencerSearch() {
     };
   }, []);
 
-  const filtered = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  useEffect(() => {
+    const normalizedQuery = query.trim();
 
-    const results = influencers
+    if (platform !== 'YouTube' || !normalizedQuery) {
+      setLiveYouTubeResults(null);
+      setLiveYouTubeLoading(false);
+      setLiveYouTubeError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setLiveYouTubeLoading(true);
+    setLiveYouTubeError(null);
+
+    const timer = window.setTimeout(() => {
+      api.searchYouTube(normalizedQuery, 12)
+        .then(results => {
+          if (cancelled) return;
+          setLiveYouTubeResults(results);
+          setLiveYouTubeLoading(false);
+        })
+        .catch(error => {
+          if (cancelled) return;
+          setLiveYouTubeResults([]);
+          setLiveYouTubeLoading(false);
+          setLiveYouTubeError(error instanceof Error ? error.message : 'YouTube search failed');
+        });
+    }, 450);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [platform, query]);
+
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const localYouTubeMatches = useMemo(() => {
+    if (!normalizedQuery) return [];
+    return influencers.filter(
+      inf => inf.platform === 'YouTube' && matchesSearchQuery(inf, normalizedQuery),
+    );
+  }, [influencers, normalizedQuery]);
+
+  const searchSourceInfluencers = useMemo(() => {
+    if (platform === 'YouTube' && normalizedQuery) {
+      const live = liveYouTubeResults ?? [];
+      if (live.length > 0 || !liveYouTubeLoading) {
+        return mergeYouTubeResults(localYouTubeMatches, live);
+      }
+      return localYouTubeMatches;
+    }
+    return influencers;
+  }, [platform, normalizedQuery, liveYouTubeResults, liveYouTubeLoading, localYouTubeMatches, influencers]);
+
+  const filtered = useMemo(() => {
+    const results = searchSourceInfluencers
       .filter(inf => {
-        if (normalizedQuery) {
-          const searchable = [inf.name, inf.handle, inf.niche, ...(inf.categories || []), inf.platform, inf.country]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-          if (!searchable.includes(normalizedQuery)) return false;
-        }
+        if (normalizedQuery && !matchesSearchQuery(inf, normalizedQuery)) return false;
         if (platform !== 'All' && inf.platform !== platform) return false;
         if (niche !== 'All' && inf.niche !== niche) return false;
         if (follower !== 'All') {
@@ -63,7 +149,7 @@ export default function InfluencerSearch() {
           if (follower === '1M–10M' && (inf.followers < 1000000 || inf.followers >= 10000000)) return false;
           if (follower === '10M+' && inf.followers < 10000000) return false;
         }
-        if (inf.aiScore < minScore) return false;
+        if ((inf.aiScore ?? 0) < minScore) return false;
         return true;
       })
       .map(inf => {
@@ -80,9 +166,11 @@ export default function InfluencerSearch() {
       });
 
     return results;
-  }, [influencers, query, platform, niche, follower, minScore]);
+  }, [searchSourceInfluencers, query, platform, niche, follower, minScore]);
 
   const topResult = filtered[0];
+  const visiblePlatforms = platform === 'All' ? platformSections : platformSections.filter(p => p === platform);
+
   const groupedFiltered = useMemo(() => {
     return {
       Instagram: filtered.filter(inf => inf.platform === 'Instagram'),
@@ -255,6 +343,16 @@ export default function InfluencerSearch() {
             </div>
           ))}
         </div>
+
+        {platform === 'YouTube' && query.trim() && (
+          <div style={{ marginTop: 16, marginBottom: 4, padding: '12px 14px', borderRadius: 12, background: 'rgba(8,12,21,0.72)', border: '1px solid rgba(56,189,248,0.16)', color: '#BAE6FD', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
+            {liveYouTubeLoading
+              ? 'Searching YouTube live data...'
+              : liveYouTubeError
+                ? `Live YouTube search unavailable: ${liveYouTubeError}`
+                : `Live YouTube results${filtered.length ? ` (${filtered.length})` : ''} - subscribers, views, source, and freshness are shown below`}
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20 }}>
@@ -337,16 +435,27 @@ export default function InfluencerSearch() {
           style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
         >
           <AnimatePresence mode="popLayout">
-            {filtered.length === 0 ? (
+            {liveYouTubeLoading && platform === 'YouTube' && normalizedQuery ? (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <GlassCard style={{ padding: 28, textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 18, color: '#fff', marginBottom: 8 }}>Searching YouTube live data...</div>
+                  <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#64748B' }}>
+                    Pulling channel metrics from YouTube Data API. Cached matches appear first when available.
+                  </div>
+                </GlassCard>
+              </div>
+            ) : filtered.length === 0 ? (
               <div style={{ gridColumn: '1 / -1' }}>
                 <GlassCard style={{ padding: 28, textAlign: 'center' }}>
                   <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 18, color: '#fff', marginBottom: 8 }}>No creators matched your search</div>
                   <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#64748B' }}>
-                    Try a different name, platform, niche, or lower the score filter.
+                    {liveYouTubeError && platform === 'YouTube'
+                      ? `Live YouTube search failed: ${liveYouTubeError}. Try a handle like @mrbeast or check YOUTUBE_API_KEY on the backend.`
+                      : 'Try a different name, platform, niche, or lower the score filter.'}
                   </div>
                 </GlassCard>
               </div>
-            ) : (['Instagram', 'TikTok', 'YouTube'] as const).map(platformName => (
+            ) : visiblePlatforms.map(platformName => (
               groupedFiltered[platformName].length > 0 && (
                 <div key={platformName}>
                   <div style={{
@@ -398,11 +507,49 @@ export default function InfluencerSearch() {
                   {inf.handle} · {inf.platform}
                 </div>
 
+                {inf.platform === 'YouTube' && (
+                  <div style={{
+                    marginBottom: 14,
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: 'rgba(56,189,248,0.06)',
+                    border: '1px solid rgba(56,189,248,0.14)',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: 8,
+                  }}>
+                    <div>
+                      <div className="label-caps" style={{ marginBottom: 4 }}>Subscribers</div>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#fff' }}>
+                        {formatCompactNumber(Number(inf.followers || 0))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="label-caps" style={{ marginBottom: 4 }}>Views</div>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#fff' }}>
+                        {formatCompactNumber(Number(inf.views || 0))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="label-caps" style={{ marginBottom: 4 }}>Source</div>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#BAE6FD' }}>
+                        {inf.dataSource || 'youtube_api_v3'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="label-caps" style={{ marginBottom: 4 }}>Updated</div>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#BAE6FD' }}>
+                        {inf.dataAsOf || 'live'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <Users size={12} color="#64748B" />
                     <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#fff' }}>
-                      {inf.followers >= 1000000 ? `${(inf.followers / 1000000).toFixed(1)}M` : `${(inf.followers / 1000).toFixed(0)}K`}
+                      {formatCompactNumber(Number(inf.followers || 0))}
                     </span>
                   </div>
                   <div style={{ width: 1, height: 12, background: 'rgba(56,189,248,0.1)' }} />
@@ -429,7 +576,7 @@ export default function InfluencerSearch() {
 
                 {/* Niche badge */}
                 <div style={{ marginTop: 12, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {inf.categories.slice(0, 2).map(cat => (
+                  {(inf.categories || []).slice(0, 2).map(cat => (
                     <span key={cat} style={{
                       padding: '2px 8px',
                       background: 'rgba(56,189,248,0.06)',

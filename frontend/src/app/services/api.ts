@@ -112,6 +112,25 @@ export const api = {
   },
 
   /**
+   * GET /influencers/{id}/authenticity
+   */
+  async getAuthenticityReport(influencerId: string | number) {
+    const found = localInfluencers.find(i => String(i.id) === String(influencerId)) || localInfluencers[0];
+    const fallbackVal = {
+      authenticityScore: found.authenticity,
+      riskLevel: found.risk === 'high' ? 'High' : found.risk === 'medium' ? 'Medium' : 'Low',
+      confidence: 0.75,
+      audienceQualityScore: found.authenticity,
+      engagementRate: found.engagement,
+      signals: ['Analysis from local catalog'],
+      warnings: [],
+      explanation: ['Heuristic authenticity estimate'],
+    };
+
+    return request<any>(`/influencers/${influencerId}/authenticity`, { method: 'GET' }, fallbackVal);
+  },
+
+  /**
    * POST /authenticity/analyze
    */
   async analyzeAuthenticity(influencerId: string | number) {
@@ -156,11 +175,22 @@ export const api = {
 
     const growthScore = Math.min(100, Math.max(0, Math.round(((tracker - found.followers) / found.followers) * 300) + 70 + bonus));
 
+    let eng = found.engagement || 3;
+    const engagement_timeline = growthMonths.map(month => {
+      eng = Math.round(eng * (1 + baseRate * 0.35 * multiplier) * 100) / 100;
+      return { month, engagement_rate: eng };
+    });
+
     const fallbackVal = {
       growth_score: growthScore,
       current_followers: found.followers,
       predicted_followers: tracker,
       timeline,
+      engagement_timeline,
+      audience_expansion_score: Math.min(100, Math.round(growthScore * 0.85)),
+      engagement_growth_score: Math.min(100, Math.round(growthScore * 0.75)),
+      follower_growth_pct: Math.round(((tracker - found.followers) / found.followers) * 1000) / 10,
+      scenario,
     };
 
     return request<any>('/growth/predict', {
@@ -253,5 +283,23 @@ export const api = {
    */
   async getAIOutputs() {
     return request<any[]>('/ai-outputs', { method: 'GET' }, localAIOutputs);
+  },
+  /**
+   * GET /youtube/search?q=...
+   * Real-time YouTube channel search via YouTube Data API v3.
+   * Returns [] on backend offline (graceful degradation).
+   */
+  async searchYouTube(query: string, maxResults: number = 12): Promise<any[]> {
+    const encoded = encodeURIComponent(query);
+    const url = `${BASE_URL}/youtube/search?q=${encoded}&max_results=${maxResults}`;
+    const response = await fetch(url, { method: 'GET' });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.results || [];
   },
 };

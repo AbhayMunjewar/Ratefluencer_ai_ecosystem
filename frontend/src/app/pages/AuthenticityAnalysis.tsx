@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Shield, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Shield, AlertTriangle } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
 import { api } from '../services/api';
 
+type Platform = 'Instagram' | 'TikTok' | 'YouTube';
+
+const platformOptions: Platform[] = ['Instagram', 'TikTok', 'YouTube'];
+
 const mockBotData = [
-  { category: 'Ghost Followers', count: 14200, pct: 6.1, risk: 'low' },
-  { category: 'Bot Accounts', count: 8400, pct: 3.6, risk: 'low' },
-  { category: 'Mass Follower Accounts', count: 11800, pct: 5.0, risk: 'medium' },
-  { category: 'Inactive (90d)', count: 28600, pct: 12.2, risk: 'low' },
-  { category: 'Suspicious Activity', count: 3200, pct: 1.4, risk: 'high' },
-  { category: 'Pod Engagement', count: 5600, pct: 2.4, risk: 'medium' },
+  { category: 'Ghost Followers', pct: 6.1, risk: 'low' },
+  { category: 'Bot Accounts', pct: 3.6, risk: 'low' },
+  { category: 'Mass Follower Accounts', pct: 5.0, risk: 'medium' },
+  { category: 'Inactive (90d)', pct: 12.2, risk: 'low' },
+  { category: 'Suspicious Activity', pct: 1.4, risk: 'high' },
+  { category: 'Pod Engagement', pct: 2.4, risk: 'medium' },
 ];
 
 const networkNodes = Array.from({ length: 32 }, (_, i) => ({
@@ -24,13 +28,63 @@ const networkNodes = Array.from({ length: 32 }, (_, i) => ({
 const riskColors: Record<string, string> = { low: '#22D3EE', medium: '#93C5FD', high: '#F87171' };
 const riskBg: Record<string, string> = { low: 'rgba(34,211,238,0.08)', medium: 'rgba(147,197,253,0.08)', high: 'rgba(248,113,113,0.08)' };
 
+function normalizeText(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function buildSearchableText(inf: any) {
+  return [inf.name, inf.handle, inf.niche, ...(inf.categories || []), inf.platform]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+/** Strict creator match — no fuzzy character overlap (fixes false positives). */
+function scoreCreatorMatch(inf: any, query: string): number {
+  const cleanQuery = normalizeText(query);
+  if (!cleanQuery) return 0;
+
+  const cleanHandle = normalizeText(String(inf.handle || '').replace(/^@/, ''));
+  const cleanName = normalizeText(String(inf.name || ''));
+
+  if (cleanHandle === cleanQuery || cleanName === cleanQuery) return 1;
+  if (cleanHandle && (cleanHandle.includes(cleanQuery) || cleanQuery.includes(cleanHandle))) return 0.95;
+  if (cleanName && (cleanName.includes(cleanQuery) || cleanQuery.includes(cleanName))) return 0.9;
+
+  const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (tokens.length > 0) {
+    const searchable = buildSearchableText(inf);
+    if (tokens.every(token => searchable.includes(token.replace(/^@/, '')))) {
+      return 0.85;
+    }
+  }
+
+  return 0;
+}
+
+function findBestMatch(pool: any[], query: string): any | null {
+  let best: any | null = null;
+  let bestScore = 0;
+  for (const inf of pool) {
+    const score = scoreCreatorMatch(inf, query);
+    if (score > bestScore) {
+      bestScore = score;
+      best = inf;
+    }
+  }
+  return bestScore >= 0.85 ? best : null;
+}
+
 export default function AuthenticityAnalysis() {
   const [handle, setHandle] = useState('');
+  const [platform, setPlatform] = useState<Platform | null>(null);
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [selectedInf, setSelectedInf] = useState<any | null>(null);
+  const [authReport, setAuthReport] = useState<any | null>(null);
   const [influencers, setInfluencers] = useState<any[]>([]);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -40,10 +94,11 @@ export default function AuthenticityAnalysis() {
         const data = await api.getInfluencers();
         if (mounted) {
           setInfluencers(data);
-          setSelectedInf(data[0] || null);
         }
       } catch (error) {
         console.error('Failed to load influencers:', error);
+      } finally {
+        if (mounted) setCatalogLoaded(true);
       }
     }
 
@@ -54,60 +109,72 @@ export default function AuthenticityAnalysis() {
     };
   }, []);
 
+  const resolveCreator = async (): Promise<any | null> => {
+    if (!platform || !handle.trim()) return null;
+
+    const query = handle.trim();
+    const platformPool = influencers.filter(inf => inf.platform === platform);
+    let match = findBestMatch(platformPool, query);
+
+    if (!match && platform === 'YouTube') {
+      try {
+        const liveResults = await api.searchYouTube(query, 8);
+        match = findBestMatch(liveResults, query);
+      } catch {
+        // Live search failed; fall through to error below
+      }
+    }
+
+    return match;
+  };
+
   const handleScan = async () => {
-    if (!handle.trim() || influencers.length === 0) return;
+    if (!handle.trim()) {
+      setScanError('Enter a creator name or handle.');
+      return;
+    }
+    if (!platform) {
+      setScanError('Select a platform: Instagram, TikTok, or YouTube.');
+      return;
+    }
+    if (!catalogLoaded) {
+      setScanError('Creator catalog is still loading. Try again in a moment.');
+      return;
+    }
+
     setScanning(true);
     setScanned(false);
     setScanError(null);
+    setAuthReport(null);
+
     try {
-      let bestMatch = null;
-      let highestSimilarity = 0;
-      const cleanQuery = handle.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const match = await resolveCreator();
 
-      for (const inf of influencers) {
-        const cleanHandle = inf.handle.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cleanName = inf.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-        let similarity = 0;
-        if (cleanHandle === cleanQuery || cleanName === cleanQuery) {
-          similarity = 1.0;
-        } else if ((cleanHandle && cleanHandle.includes(cleanQuery)) || (cleanName && cleanName.includes(cleanQuery))) {
-          similarity = 0.9;
-        } else if ((cleanHandle && cleanQuery.includes(cleanHandle) && cleanHandle.length > 3) || (cleanName && cleanQuery.includes(cleanName) && cleanName.length > 3)) {
-          similarity = 0.8;
-        } else {
-          let intersection = 0;
-          const queryChars = cleanQuery.split('');
-          const infCharSet = new Set(cleanName.split(''));
-          for (const char of queryChars) {
-            if (infCharSet.has(char)) intersection++;
-          }
-          similarity = intersection / Math.max(cleanQuery.length, cleanName.length || 1);
-        }
-
-        if (similarity > highestSimilarity) {
-          highestSimilarity = similarity;
-          bestMatch = inf;
-        }
-      }
-
-      if (bestMatch && highestSimilarity > 0.45) {
-        const analysis = await api.analyzeAuthenticity(bestMatch.id);
-        setSelectedInf({
-          ...bestMatch,
-          authenticity: analysis.authenticity_score,
-          engagement: analysis.engagement_rate,
-          risk: String(analysis.risk_level || '').toLowerCase(),
-        });
-        setScanned(true);
-      } else {
-        setScanError(`No creator found matching "${handle}". Please try another handle.`);
+      if (!match) {
+        setScanError(
+          `No ${platform} creator found matching "${handle}". Check the spelling or try their @handle.`,
+        );
         setScanned(false);
+        setSelectedInf(null);
+        return;
       }
+
+      const report = await api.getAuthenticityReport(match.id);
+      const analysis = await api.analyzeAuthenticity(match.id);
+
+      setSelectedInf({
+        ...match,
+        authenticity: report.authenticityScore ?? analysis.authenticity_score,
+        engagement: report.engagementRate ?? analysis.engagement_rate,
+        risk: String(report.riskLevel || analysis.risk_level || 'medium').toLowerCase(),
+      });
+      setAuthReport(report);
+      setScanned(true);
     } catch (error) {
       console.error(error);
-      setScanError('An error occurred during authentication scanning.');
+      setScanError('An error occurred during authenticity scanning.');
       setScanned(false);
+      setSelectedInf(null);
     } finally {
       setScanning(false);
     }
@@ -116,8 +183,9 @@ export default function AuthenticityAnalysis() {
   const authenticityScore = selectedInf?.authenticity ?? 0;
   const verdictColor = authenticityScore >= 90 ? '#22D3EE' : authenticityScore >= 75 ? '#93C5FD' : '#F87171';
   const verdictText = authenticityScore >= 90 ? 'AUTHENTIC' : authenticityScore >= 75 ? 'MOSTLY REAL' : 'SUSPICIOUS';
+  const followerBase = Math.max(selectedInf?.followers ?? 1, 1);
 
-  if (!selectedInf) {
+  if (!catalogLoaded) {
     return <div style={{ padding: 28, color: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>Loading authenticity engine...</div>;
   }
 
@@ -136,15 +204,52 @@ export default function AuthenticityAnalysis() {
         </p>
       </div>
 
-      {/* Scan Input */}
       <GlassCard style={{ padding: 28 }}>
+        <div className="label-caps" style={{ marginBottom: 10 }}>Step 1 — Select platform</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+          {platformOptions.map(opt => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => {
+                setPlatform(opt);
+                setScanned(false);
+                setScanError(null);
+              }}
+              style={{
+                padding: '8px 18px',
+                borderRadius: 20,
+                border: platform === opt ? '1px solid #38BDF8' : '1px solid rgba(56,189,248,0.15)',
+                background: platform === opt ? 'rgba(56,189,248,0.12)' : 'transparent',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 13,
+                fontWeight: 500,
+                color: platform === opt ? '#BAE6FD' : '#64748B',
+                cursor: 'pointer',
+              }}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+
+        <div className="label-caps" style={{ marginBottom: 10 }}>Step 2 — Enter creator</div>
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderRadius: 10 }}>
             <input
               value={handle}
               onChange={e => setHandle(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleScan()}
-              placeholder="Enter @handle, username, or profile URL..."
+              placeholder={
+                platform === 'YouTube'
+                  ? 'e.g. Mr Indian Hacker, @mrindianhacker'
+                  : platform === 'Instagram'
+                    ? 'e.g. @cristiano or creator name'
+                    : platform === 'TikTok'
+                      ? 'e.g. @charlidamelio or creator name'
+                      : 'Select a platform above, then enter name or @handle'
+              }
+              disabled={!platform}
               style={{
                 width: '100%',
                 height: 50,
@@ -156,10 +261,10 @@ export default function AuthenticityAnalysis() {
                 fontSize: 15,
                 color: '#ffffff',
                 outline: 'none',
+                opacity: platform ? 1 : 0.55,
               }}
             />
             <Search size={16} color="#38BDF8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
-            {/* Scanning beam */}
             {scanning && (
               <div style={{
                 position: 'absolute',
@@ -188,7 +293,7 @@ export default function AuthenticityAnalysis() {
           </div>
           <button
             onClick={handleScan}
-            disabled={scanning}
+            disabled={scanning || !platform}
             style={{
               padding: '0 28px',
               height: 50,
@@ -199,9 +304,9 @@ export default function AuthenticityAnalysis() {
               fontWeight: 500,
               fontSize: 14,
               color: '#fff',
-              cursor: scanning ? 'not-allowed' : 'pointer',
+              cursor: scanning || !platform ? 'not-allowed' : 'pointer',
               boxShadow: '0 0 20px rgba(14,165,233,0.3)',
-              opacity: scanning ? 0.7 : 1,
+              opacity: scanning || !platform ? 0.6 : 1,
               display: 'flex',
               alignItems: 'center',
               gap: 8,
@@ -221,9 +326,16 @@ export default function AuthenticityAnalysis() {
           </button>
         </div>
 
+        {platform && (
+          <p style={{ marginTop: 12, fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#64748B' }}>
+            Searching {platform} catalog
+            {platform === 'YouTube' ? ' and YouTube Data API' : ''} for an exact or name/handle match.
+          </p>
+        )}
+
         {scanning && (
           <div style={{ marginTop: 16 }}>
-            {['Fetching follower graph...', 'Running bot detection model...', 'Analyzing engagement patterns...', 'Calculating authenticity score...'].map((step, i) => (
+            {['Resolving creator on selected platform...', 'Running bot detection model...', 'Analyzing engagement patterns...', 'Calculating authenticity score...'].map((step, i) => (
               <motion.div
                 key={step}
                 initial={{ opacity: 0, x: -12 }}
@@ -266,9 +378,8 @@ export default function AuthenticityAnalysis() {
         )}
       </GlassCard>
 
-      {/* Results */}
       <AnimatePresence>
-        {scanned && (
+        {scanned && selectedInf && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -276,7 +387,6 @@ export default function AuthenticityAnalysis() {
             style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
           >
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 20 }}>
-              {/* Score Gauge */}
               <GlassCard style={{ padding: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div className="label-caps" style={{ marginBottom: 24 }}>OVERALL AUTHENTICITY</div>
                 <svg width={200} height={120} viewBox="0 0 200 120">
@@ -327,9 +437,16 @@ export default function AuthenticityAnalysis() {
                 <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', marginTop: 8 }}>
                   {selectedInf.name} · {selectedInf.platform}
                 </div>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#38BDF8', marginTop: 4 }}>
+                  {selectedInf.handle}
+                </div>
+                {authReport?.confidence != null && (
+                  <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#64748B', marginTop: 8 }}>
+                    Confidence: {Math.round(authReport.confidence * 100)}%
+                  </div>
+                )}
               </GlassCard>
 
-              {/* Bot Detection Table */}
               <GlassCard style={{ padding: 24 }}>
                 <h3 style={{ fontSize: 15, color: '#fff', margin: '0 0 16px' }}>Follower Quality Breakdown</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -361,7 +478,7 @@ export default function AuthenticityAnalysis() {
                     >
                       <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#94A3B8' }}>{row.category}</span>
                       <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#64748B' }}>
-                        {(row.count * selectedInf.followers / 234000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        {Math.round((row.pct / 100) * followerBase).toLocaleString()}
                       </span>
                       <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#94A3B8' }}>{row.pct}%</span>
                       <div style={{
@@ -381,10 +498,19 @@ export default function AuthenticityAnalysis() {
                     </motion.div>
                   ))}
                 </div>
+                {authReport?.signals?.length > 0 && (
+                  <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(56,189,248,0.08)' }}>
+                    <div className="label-caps" style={{ marginBottom: 8 }}>Signals</div>
+                    {authReport.signals.slice(0, 4).map((signal: string) => (
+                      <div key={signal} style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#94A3B8', marginBottom: 4 }}>
+                        · {signal}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </GlassCard>
             </div>
 
-            {/* Network Graph */}
             <GlassCard style={{ padding: 24 }}>
               <h3 style={{ fontSize: 15, color: '#fff', margin: '0 0 16px' }}>Follower Network Graph</h3>
               <div style={{ position: 'relative', height: 300, overflow: 'hidden', borderRadius: 8, background: 'rgba(2,4,8,0.6)' }}>
@@ -429,10 +555,10 @@ export default function AuthenticityAnalysis() {
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#334155' }}>
           <Shield size={48} style={{ margin: '0 auto 16px', display: 'block', opacity: 0.3 }} />
           <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: 20 }}>
-            Enter a creator handle above to begin analysis
+            Select a platform, then enter a creator to analyze
           </p>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, marginTop: 8 }}>
-            Try: @ariavoss, @kai.nkm, @finnadeyemi
+            YouTube: Mr Indian Hacker · Instagram: @cristiano · TikTok: charli d&apos;amelio
           </p>
         </div>
       )}
