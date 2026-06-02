@@ -16,6 +16,15 @@ async def lifespan(app: FastAPI):
         ensure_models_trained()
     except Exception:
         pass
+    try:
+        from backend.config import get_youtube_api_key
+        from backend.services.youtube_influencer_store import load_youtube_influencers, sync_youtube_from_seeds
+
+        if get_youtube_api_key():
+            sync_youtube_from_seeds(force=False)
+            load_youtube_influencers()
+    except Exception:
+        pass
     yield
 
 
@@ -34,7 +43,9 @@ app = FastAPI(
 # CORS Configuration
 origins = [
     "http://localhost:3000",
-    "http://localhost:5173"
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
 ]
 
 app.add_middleware(
@@ -89,8 +100,18 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/", summary="Health Check")
 async def health_check():
+    from backend.config import get_youtube_api_key
+    from backend.repositories.repositories import InfluencerRepository
+
+    repo = InfluencerRepository()
     return {
         "status": "healthy",
         "service": "Ratefluencer AI Intelligence API",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "catalog": {
+            "instagram": len(repo.get_by_platform("Instagram")),
+            "tiktok": len(repo.get_by_platform("TikTok")),
+            "youtube_cached": len(repo.get_by_platform("YouTube")),
+        },
+        "youtube_api_configured": bool(get_youtube_api_key()),
     }

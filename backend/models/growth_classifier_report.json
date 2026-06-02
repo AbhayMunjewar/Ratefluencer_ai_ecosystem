@@ -1,0 +1,113 @@
+{
+  "metrics": {
+    "accuracy": 0.47683333333333333,
+    "precision": 0.41020049964311206,
+    "recall": 0.47683333333333333,
+    "f1_score": 0.4183941812724048,
+    "confusion_matrix": [
+      [
+        0,
+        113,
+        485
+      ],
+      [
+        0,
+        535,
+        1859
+      ],
+      [
+        0,
+        682,
+        2326
+      ]
+    ],
+    "class_distribution": {
+      "Low Growth": 2990,
+      "Medium Growth": 11971,
+      "High Growth": 15038
+    }
+  },
+  "feature_importance": [
+    {
+      "feature": "num__saves_per_follower",
+      "importance": 0.024022532626986504
+    },
+    {
+      "feature": "num__shares_per_follower",
+      "importance": 0.023974265903234482
+    },
+    {
+      "feature": "num__comments_per_follower",
+      "importance": 0.02352539636194706
+    },
+    {
+      "feature": "num__impressions",
+      "importance": 0.023437155410647392
+    },
+    {
+      "feature": "num__likes_per_follower",
+      "importance": 0.023429453372955322
+    },
+    {
+      "feature": "num__impressions_per_follower",
+      "importance": 0.023300834000110626
+    },
+    {
+      "feature": "num__reach_per_follower",
+      "importance": 0.023197181522846222
+    },
+    {
+      "feature": "num__saves",
+      "importance": 0.022825129330158234
+    },
+    {
+      "feature": "num__reach",
+      "importance": 0.022689545527100563
+    },
+    {
+      "feature": "num__likes",
+      "importance": 0.022667894139885902
+    },
+    {
+      "feature": "cat__content_category_Music",
+      "importance": 0.02257578819990158
+    },
+    {
+      "feature": "num__engagement_rate",
+      "importance": 0.02214707061648369
+    },
+    {
+      "feature": "cat__content_category_Fashion",
+      "importance": 0.02176492288708687
+    },
+    {
+      "feature": "cat__day_of_week_Monday",
+      "importance": 0.021713854745030403
+    },
+    {
+      "feature": "num__shares",
+      "importance": 0.021646516397595406
+    },
+    {
+      "feature": "cat__content_category_Comedy",
+      "importance": 0.021641982719302177
+    },
+    {
+      "feature": "cat__day_of_week_Thursday",
+      "importance": 0.02148965373635292
+    },
+    {
+      "feature": "cat__day_of_week_Saturday",
+      "importance": 0.021432187408208847
+    },
+    {
+      "feature": "cat__account_type_creator",
+      "importance": 0.02139013446867466
+    },
+    {
+      "feature": "cat__day_of_week_Tuesday",
+      "importance": 0.021380942314863205
+    }
+  ],
+  "model_path": "D:\\ratefluencer_ai_ecosystem\\backend\\models\\growth_classifier.pkl"
+}

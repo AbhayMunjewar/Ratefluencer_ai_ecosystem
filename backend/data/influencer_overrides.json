@@ -1,0 +1,133 @@
+[
+  {
+    "id": "ig_1",
+    "authenticity": 91,
+    "engagement": 1.31,
+    "risk": "low",
+    "name": "Cristiano Ronaldo",
+    "handle": "@cristiano",
+    "platform": "Instagram",
+    "niche": "Sports with a ball",
+    "followers": 477900000,
+    "aiScore": 64,
+    "country": "IN",
+    "growth": [
+      100,
+      104,
+      108,
+      112,
+      116,
+      120,
+      124,
+      128,
+      132,
+      136,
+      140,
+      144
+    ],
+    "verified": true,
+    "location": "India",
+    "bio": "Sports with a ball creator on Instagram. Audience primarily in India.",
+    "campaigns": 0,
+    "avgLikes": 5000000,
+    "avgComments": 150000,
+    "categories": [
+      "Sports with a ball"
+    ],
+    "dataSource": "dataset/social media influencers - instagram sep-2022.csv",
+    "dataAsOf": "2022-09",
+    "following": 7500,
+    "avgShares": 400000,
+    "avgSaves": 700000,
+    "views": 3096792000,
+    "postingFrequency": 5.0,
+    "audienceDemographics": {
+      "primaryAgeRange": "25-34",
+      "genderSplit": {
+        "female": 59,
+        "male": 41
+      },
+      "topCountries": [
+        "IN",
+        "US",
+        "GB"
+      ],
+      "interests": [
+        "Sports with a ball"
+      ],
+      "source": "dataset"
+    },
+    "metricsSource": {
+      "followers": "dataset",
+      "avgLikes": "dataset",
+      "avgComments": "derived_from_engagement",
+      "country": "dataset",
+      "following": "estimated_ratio",
+      "avgShares": "platform_benchmark",
+      "avgSaves": "platform_benchmark",
+      "views": "estimated_reach",
+      "postingFrequency": "estimated_cadence",
+      "audienceDemographics": "dataset_country_categories"
+    }
+  },
+  {
+    "id": "tt_1",
+    "authenticity": 66,
+    "engagement": 19.11,
+    "risk": "medium"
+  },
+  {
+    "id": "ig_36",
+    "authenticity": 63,
+    "engagement": 10.04,
+    "risk": "medium"
+  },
+  {
+    "id": "ig_9",
+    "authenticity": 90,
+    "engagement": 1.48,
+    "risk": "low"
+  },
+  {
+    "id": "ig_323",
+    "authenticity": 87,
+    "engagement": 2.01,
+    "risk": "low"
+  },
+  {
+    "id": "yt_search_UCSiDGb0MnHFGjs4E2WKvShw",
+    "authenticity": 82,
+    "engagement": 0.59,
+    "risk": "medium"
+  },
+  {
+    "id": "yt_search_UC5c9VlYTSvBSCaoMu_GI6gQ",
+    "authenticity": 57,
+    "engagement": 0.23,
+    "risk": "high"
+  },
+  {
+    "id": "yt_6",
+    "authenticity": 63,
+    "engagement": 0.0,
+    "risk": "medium"
+  },
+  {
+    "id": "yt_1",
+    "authenticity": 88,
+    "engagement": 0.59,
+    "risk": "low"
+  },
+  {
+    "id": "ig_24",
+    "authenticity": 63,
+    "engagement": 4.41,
+    "risk": "medium"
+  },
+  {
+    "id": "yt_search_UC9tsfp-Xl8N2ee-adER3I0g",
+    "authenticity": 43,
+    "engagement": 107.06,
+    "risk": "high"
+  }
+]

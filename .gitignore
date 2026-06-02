@@ -126,3 +126,40 @@ dist-ssr/
 # Temporary files
 .gsd-install-temp/
 .gsd-update-temp/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+.venv*/
+venv/
+
+# Frontend generated artifacts
+frontend/node_modules/
+frontend/dist/
+
+# Backend generated/local data
+backend/__pycache__/
+backend/**/__pycache__/
+backend/data/chroma/
+backend/data/imports/*
+!backend/data/imports/.gitkeep
+backend/data/*.bak
+backend/.gemini/
+backend/.gsd/
+backend/adapters/
+backend/backend/
+backend/docs/
+backend/frontend/
+backend/GSD-STYLE.md
+backend/PROJECT_RULES.md
+backend/scripts/search_repo.*
+backend/scripts/setup_search.*
+backend/scripts/validate-*
+TODO.md
+
+# Local machine files
+*.bak

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "k1",
+    "topic": "fitness_supplements",
+    "title": "Sports Nutrition Creator Fit",
+    "content": "Fitness creators with high save rates and workout tutorials convert strongly for protein, recovery, and performance nutrition campaigns."
+  },
+  {
+    "id": "k2",
+    "topic": "beauty_skincare",
+    "title": "Clean Beauty Audience Signals",
+    "content": "Beauty creators with science-backed routines and high comment depth perform best for skincare launches targeting 18-34 female audiences."
+  },
+  {
+    "id": "k3",
+    "topic": "luxury_fashion",
+    "title": "Luxury Editorial Partnerships",
+    "content": "Luxury fashion partnerships require high audience quality, editorial visual consistency, and low bot engagement probability."
+  },
+  {
+    "id": "k4",
+    "topic": "fintech",
+    "title": "FinTech Trust Requirements",
+    "content": "Finance creators need authenticity scores above 85, transparent disclosures, and audience interest in business and investing topics."
+  }
+]

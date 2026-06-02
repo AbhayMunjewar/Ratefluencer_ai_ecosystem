@@ -11,7 +11,10 @@ def _load_dotenv() -> None:
     except ImportError:
         return
     root = Path(__file__).resolve().parents[1]
+    backend_dir = Path(__file__).resolve().parent
+    # Prefer repo-root .env; also allow backend/.env for local overrides.
     load_dotenv(root / ".env")
+    load_dotenv(backend_dir / ".env", override=False)
 
 
 _load_dotenv()

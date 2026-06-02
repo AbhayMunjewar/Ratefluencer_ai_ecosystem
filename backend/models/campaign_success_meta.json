@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0-no-leakage",
+  "feature_cols": [
+    "platform",
+    "category",
+    "country",
+    "followers",
+    "engagement_rate",
+    "avg_likes",
+    "avg_comments",
+    "avg_shares",
+    "avg_saves",
+    "reach",
+    "impressions",
+    "audience_quality_score",
+    "brand_industry",
+    "brand_match_score",
+    "campaign_type",
+    "campaign_duration_days",
+    "sponsored_post_count",
+    "estimated_campaign_budget",
+    "growth_tier",
+    "growth_score",
+    "authenticity_score",
+    "fake_follower_probability"
+  ],
+  "numeric_features": [
+    "followers",
+    "engagement_rate",
+    "avg_likes",
+    "avg_comments",
+    "avg_shares",
+    "avg_saves",
+    "reach",
+    "impressions",
+    "audience_quality_score",
+    "brand_match_score",
+    "campaign_duration_days",
+    "sponsored_post_count",
+    "estimated_campaign_budget",
+    "growth_score",
+    "authenticity_score",
+    "fake_follower_probability"
+  ],
+  "categorical_features": [
+    "platform",
+    "category",
+    "country",
+    "brand_industry",
+    "campaign_type",
+    "growth_tier"
+  ],
+  "target": "campaign_success",
+  "classes": [
+    0,
+    1
+  ],
+  "dataset": "D:\\ratefluencer_ai_ecosystem\\backend\\training_dataset\\campaign_success_dataset(1).csv",
+  "metrics": {
+    "accuracy": 0.9521,
+    "roc_auc": 0.9938
+  }
+}

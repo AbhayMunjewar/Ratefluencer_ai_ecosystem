@@ -191,8 +191,14 @@ class YouTubeIngestionService:
         merged.setdefault("risk", influencer.get("risk", "medium"))
         return merged
 
-    def search_channels(self, query: str, max_results: int = 12) -> List[Dict[str, Any]]:
-        """Search YouTube for channels matching `query` and return enriched profiles."""
+    def search_channels(self, query: str, max_results: int = 12) -> Dict[str, Any]:
+        """Search YouTube for channels matching `query`. Returns {results, error?}."""
+        if not self.api_key:
+            return {
+                "results": [],
+                "error": "YOUTUBE_API_KEY is not set. Add it to .env at the project root and restart the backend.",
+            }
+
         search = self._get(
             "search",
             {
@@ -203,7 +209,7 @@ class YouTubeIngestionService:
             },
         )
         if "error" in search:
-            return []
+            return {"results": [], "error": search["error"]}
 
         channel_items = search.get("items") or []
         channel_ids = [
@@ -212,7 +218,7 @@ class YouTubeIngestionService:
             if item.get("snippet", {}).get("channelId")
         ]
         if not channel_ids:
-            return []
+            return {"results": []}
 
         channels_data = self._get(
             "channels",
@@ -269,7 +275,7 @@ class YouTubeIngestionService:
             )
             profile.setdefault("campaigns", 0)
             results.append(profile)
-        return results
+        return {"results": results}
 
     def _profile_from_channel_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
         snippet = item.get("snippet") or {}

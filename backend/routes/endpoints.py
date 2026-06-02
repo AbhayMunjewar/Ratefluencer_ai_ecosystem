@@ -77,8 +77,17 @@ async def search_youtube_live(q: str, max_results: int = 12):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Query parameter 'q' is required.",
         )
-    results = youtube_service.search_channels(q.strip(), max_results=min(max_results, 20))
-    return {"results": results, "query": q, "source": "youtube_api_v3"}
+    payload = youtube_service.search_channels(q.strip(), max_results=min(max_results, 20))
+    if payload.get("error"):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(payload["error"]),
+        )
+    return {
+        "results": payload.get("results") or [],
+        "query": q.strip(),
+        "source": "youtube_api_v3",
+    }
 
 
 @router.get("/dashboard", response_model=DashboardResponse)
@@ -116,23 +125,42 @@ async def analyze_authenticity(request: AuthenticityRequest):
 
 @router.post("/growth/predict", response_model=GrowthResponse)
 async def predict_growth(request: GrowthRequest):
-    result = growth_service.predict_growth(request.influencer_id, request.scenario)
-    if "error" in result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])
-
-    influencer = influencer_repo.get_by_id(request.influencer_id)
-    if influencer:
-        handle = influencer.get("handle", "@creator")
-        activity_repo.add_activity(
-            {
-                "type": "info",
-                "message": (
-                    f"Growth prediction updated for {handle} — scenario: '{request.scenario}' "
-                    f"resulting in +{result['predicted_followers'] - result['current_followers']:,} followers"
-                ),
-                "time": "Just now",
-            }
+    feature_payload = None
+    if request.followers is not None or request.likes is not None:
+        feature_payload = request.model_dump(
+            exclude={"influencer_id", "scenario"},
+            exclude_none=True,
         )
+
+    result = growth_service.predict_growth(
+        influencer_id=request.influencer_id,
+        scenario=request.scenario or "baseline",
+        features=feature_payload,
+    )
+    if "error" in result:
+        status_code = (
+            status.HTTP_503_SERVICE_UNAVAILABLE
+            if "not found at" in str(result["error"]).lower()
+            or "train_growth_classifier" in str(result["error"])
+            else status.HTTP_404_NOT_FOUND
+        )
+        raise HTTPException(status_code=status_code, detail=result["error"])
+
+    if request.influencer_id:
+        influencer = influencer_repo.get_by_id(request.influencer_id)
+        if influencer:
+            handle = influencer.get("handle", "@creator")
+            activity_repo.add_activity(
+                {
+                    "type": "info",
+                    "message": (
+                        f"Growth tier for {handle}: {result['growthTier']} "
+                        f"({int(result['confidence'] * 100)}% confidence, "
+                        f"score {result['growthScore']}/100)"
+                    ),
+                    "time": "Just now",
+                }
+            )
     return result
 
 
@@ -167,11 +195,18 @@ async def match_brand(request: BrandMatchRequest):
 
 @router.post("/campaign-success", response_model=CampaignSuccessResponse)
 async def campaign_success(request: CampaignSuccessRequest):
+    from backend.ml.campaign_success_classifier import is_model_available
+
     result = campaign_success_service.predict_campaign_success(
         request.campaign_id, request.influencer_id
     )
     if "error" in result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])
+        detail = result["error"]
+        if "not found" in detail.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+        if not is_model_available() and "classifier not found" in detail.lower():
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
     campaign = campaign_repo.get_by_id(request.campaign_id)
     influencer = influencer_repo.get_by_id(request.influencer_id)
@@ -288,6 +323,24 @@ async def get_all_campaigns():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch campaigns: {exc}",
+        ) from exc
+
+
+@router.post("/campaigns", status_code=status.HTTP_201_CREATED)
+async def create_campaign(campaign: dict):
+    try:
+        if not campaign.get("name"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Campaign name is required",
+            )
+        return campaign_repo.create(campaign)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create campaign: {exc}",
         ) from exc
 
 
