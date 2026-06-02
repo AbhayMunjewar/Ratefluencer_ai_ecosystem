@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { Search, Filter, Star, MapPin, Users, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { AvatarRing } from '../components/AvatarRing';
@@ -7,6 +7,12 @@ import { AIScoreGauge } from '../components/AIScoreGauge';
 import { SparkLine } from '../components/SparkLine';
 import { GlassCard } from '../components/GlassCard';
 import { api } from '../services/api';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import {
+  CREATOR_LIST_DISPLAY_LIMIT,
+  buildSearchTextMap,
+  matchesSearchQuery,
+} from '../utils/creatorSearch';
 
 const platforms = ['All', 'Instagram', 'TikTok', 'YouTube'];
 const niches = ['All', 'Fashion', 'Tech', 'Beauty', 'Fitness', 'Gaming', 'Finance', 'Food', 'Travel'];
@@ -14,21 +20,7 @@ const followerRanges = ['All', '0–100K', '100K–1M', '1M–10M', '10M+'];
 const riskLabels = ['low', 'medium', 'high'];
 const platformSections = ['Instagram', 'TikTok', 'YouTube'] as const;
 
-function buildSearchableText(inf: any) {
-  return [inf.name, inf.handle, inf.niche, ...(inf.categories || []), inf.platform, inf.country]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-}
-
-/** Token-based match so "mr beast" matches "MrBeast" and "@mrbeast". */
-function matchesSearchQuery(inf: any, query: string, skipTextMatch = false) {
-  if (!query || skipTextMatch || inf._fromLiveSearch) return true;
-  const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
-  if (tokens.length === 0) return true;
-  const searchable = buildSearchableText(inf);
-  return tokens.every(token => searchable.includes(token.replace(/^@/, '')));
-}
+const GRID_DISPLAY_LIMIT = CREATOR_LIST_DISPLAY_LIMIT;
 
 function mergeYouTubeResults(local: any[], live: any[]) {
   const merged = [...local];
@@ -60,32 +52,43 @@ export default function InfluencerSearch() {
   const [liveYouTubeResults, setLiveYouTubeResults] = useState<any[] | null>(null);
   const [liveYouTubeLoading, setLiveYouTubeLoading] = useState(false);
   const [liveYouTubeError, setLiveYouTubeError] = useState<string | null>(null);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadInfluencers() {
-      try {
-        const data = await api.getInfluencers();
-        if (mounted) {
-          setInfluencers(data);
-        }
-      } catch (error) {
-        console.error('Failed to load influencers:', error);
+      const { data, live, error } = await api.getInfluencersByPlatform();
+      if (!mounted) return;
+      if (live) {
+        const merged = [
+          ...(data.Instagram || []),
+          ...(data.TikTok || []),
+          ...(data.YouTube || []),
+        ];
+        setInfluencers(merged);
+        setCatalogError(null);
+      } else {
+        setInfluencers([]);
+        setCatalogError(
+          error ??
+            'Start the backend (uvicorn on port 8000) and reload — Instagram/TikTok come from CSV files on the server.',
+        );
       }
     }
 
-    loadInfluencers();
+    loadInfluencers().catch(console.error);
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  useEffect(() => {
-    const normalizedQuery = query.trim();
+  const debouncedQuery = useDebouncedValue(query.trim(), 220);
+  const searchTextMap = useMemo(() => buildSearchTextMap(influencers), [influencers]);
 
-    if (platform !== 'YouTube' || !normalizedQuery) {
+  useEffect(() => {
+    if (platform !== 'YouTube' || !debouncedQuery) {
       setLiveYouTubeResults(null);
       setLiveYouTubeLoading(false);
       setLiveYouTubeError(null);
@@ -97,10 +100,11 @@ export default function InfluencerSearch() {
     setLiveYouTubeError(null);
 
     const timer = window.setTimeout(() => {
-      api.searchYouTube(normalizedQuery, 12)
-        .then(results => {
+      api.searchYouTube(debouncedQuery, 12)
+        .then(({ results, error }) => {
           if (cancelled) return;
           setLiveYouTubeResults(results);
+          setLiveYouTubeError(error ?? null);
           setLiveYouTubeLoading(false);
         })
         .catch(error => {
@@ -115,19 +119,17 @@ export default function InfluencerSearch() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [platform, query]);
-
-  const normalizedQuery = query.trim().toLowerCase();
+  }, [platform, debouncedQuery]);
 
   const localYouTubeMatches = useMemo(() => {
-    if (!normalizedQuery) return [];
+    if (!debouncedQuery) return [];
     return influencers.filter(
-      inf => inf.platform === 'YouTube' && matchesSearchQuery(inf, normalizedQuery),
+      inf => inf.platform === 'YouTube' && matchesSearchQuery(inf, debouncedQuery, searchTextMap),
     );
-  }, [influencers, normalizedQuery]);
+  }, [influencers, debouncedQuery, searchTextMap]);
 
   const searchSourceInfluencers = useMemo(() => {
-    if (platform === 'YouTube' && normalizedQuery) {
+    if (platform === 'YouTube' && debouncedQuery) {
       const live = liveYouTubeResults ?? [];
       if (live.length > 0 || !liveYouTubeLoading) {
         return mergeYouTubeResults(localYouTubeMatches, live);
@@ -135,12 +137,12 @@ export default function InfluencerSearch() {
       return localYouTubeMatches;
     }
     return influencers;
-  }, [platform, normalizedQuery, liveYouTubeResults, liveYouTubeLoading, localYouTubeMatches, influencers]);
+  }, [platform, debouncedQuery, liveYouTubeResults, liveYouTubeLoading, localYouTubeMatches, influencers]);
 
   const filtered = useMemo(() => {
-    const results = searchSourceInfluencers
+    return searchSourceInfluencers
       .filter(inf => {
-        if (normalizedQuery && !matchesSearchQuery(inf, normalizedQuery)) return false;
+        if (debouncedQuery && !matchesSearchQuery(inf, debouncedQuery, searchTextMap)) return false;
         if (platform !== 'All' && inf.platform !== platform) return false;
         if (niche !== 'All' && inf.niche !== niche) return false;
         if (follower !== 'All') {
@@ -152,32 +154,26 @@ export default function InfluencerSearch() {
         if ((inf.aiScore ?? 0) < minScore) return false;
         return true;
       })
-      .map(inf => {
-        const relevance = normalizedQuery
-          ? [inf.name, inf.handle, inf.niche, ...(inf.categories || []), inf.platform]
-              .filter(Boolean)
-              .reduce((score, value) => score + (String(value).toLowerCase().includes(normalizedQuery) ? 1 : 0), 0)
-          : 0;
-        return { ...inf, relevance };
-      })
-      .sort((a, b) => {
-        if (b.relevance !== a.relevance) return b.relevance - a.relevance;
-        return b.aiScore - a.aiScore;
-      });
-
-    return results;
-  }, [searchSourceInfluencers, query, platform, niche, follower, minScore]);
+      .sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
+  }, [searchSourceInfluencers, debouncedQuery, platform, niche, follower, minScore]);
 
   const topResult = filtered[0];
   const visiblePlatforms = platform === 'All' ? platformSections : platformSections.filter(p => p === platform);
 
   const groupedFiltered = useMemo(() => {
+    const sliceGroup = (items: typeof filtered) => items.slice(0, GRID_DISPLAY_LIMIT);
     return {
-      Instagram: filtered.filter(inf => inf.platform === 'Instagram'),
-      TikTok: filtered.filter(inf => inf.platform === 'TikTok'),
-      YouTube: filtered.filter(inf => inf.platform === 'YouTube'),
+      Instagram: sliceGroup(filtered.filter(inf => inf.platform === 'Instagram')),
+      TikTok: sliceGroup(filtered.filter(inf => inf.platform === 'TikTok')),
+      YouTube: sliceGroup(filtered.filter(inf => inf.platform === 'YouTube')),
     };
   }, [filtered]);
+
+  const groupedTotals = useMemo(() => ({
+    Instagram: filtered.filter(inf => inf.platform === 'Instagram').length,
+    TikTok: filtered.filter(inf => inf.platform === 'TikTok').length,
+    YouTube: filtered.filter(inf => inf.platform === 'YouTube').length,
+  }), [filtered]);
   const activeFilters = [platform !== 'All', niche !== 'All', follower !== 'All', minScore > 0, query.trim().length > 0].filter(Boolean).length;
 
   const riskColors: Record<string, string> = {
@@ -208,8 +204,22 @@ export default function InfluencerSearch() {
           Discover <em style={{ fontStyle: 'italic', fontWeight: 300, color: '#BAE6FD' }}>extraordinary</em> creators
         </h2>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, color: '#64748B', marginBottom: 24 }}>
-          AI-powered search across 2.4M verified creators
+          Instagram & TikTok from server CSV · YouTube via live API search
         </p>
+
+        {catalogError && (
+          <p
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 12,
+              color: '#FCA5A5',
+              marginBottom: 16,
+              lineHeight: 1.45,
+            }}
+          >
+            {catalogError}
+          </p>
+        )}
 
         <div style={{ position: 'relative', marginBottom: 20 }}>
           <Search
@@ -344,7 +354,7 @@ export default function InfluencerSearch() {
           ))}
         </div>
 
-        {platform === 'YouTube' && query.trim() && (
+        {platform === 'YouTube' && debouncedQuery && (
           <div style={{ marginTop: 16, marginBottom: 4, padding: '12px 14px', borderRadius: 12, background: 'rgba(8,12,21,0.72)', border: '1px solid rgba(56,189,248,0.16)', color: '#BAE6FD', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
             {liveYouTubeLoading
               ? 'Searching YouTube live data...'
@@ -427,15 +437,11 @@ export default function InfluencerSearch() {
         </div>
 
         {/* Grid */}
-        <motion.div
-          variants={{ container: { staggerChildren: 0.07 }, show: {} }}
-          initial="container"
-          animate="container"
+        <div
           data-search-results
           style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
         >
-          <AnimatePresence mode="popLayout">
-            {liveYouTubeLoading && platform === 'YouTube' && normalizedQuery ? (
+            {liveYouTubeLoading && platform === 'YouTube' && debouncedQuery ? (
               <div style={{ gridColumn: '1 / -1' }}>
                 <GlassCard style={{ padding: 28, textAlign: 'center' }}>
                   <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 18, color: '#fff', marginBottom: 8 }}>Searching YouTube live data...</div>
@@ -467,24 +473,23 @@ export default function InfluencerSearch() {
                     <div style={{ fontFamily: 'Inter, sans-serif', color: '#BAE6FD', fontWeight: 600, fontSize: 14 }}>
                       {platformName}
                     </div>
-                    <div className="label-caps">{groupedFiltered[platformName].length} creators</div>
+                    <div className="label-caps">
+                      {groupedTotals[platformName] > GRID_DISPLAY_LIMIT
+                        ? `${groupedFiltered[platformName].length} of ${groupedTotals[platformName]} shown`
+                        : `${groupedTotals[platformName]} creators`}
+                    </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
                     {groupedFiltered[platformName].map(inf => (
-                      <motion.div
+                      <div
                         key={inf.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.35 }}
                         className="glass-card"
                         onClick={() => navigate(`/influencers/${inf.id}`)}
                         style={{ padding: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
                       >
                 {/* Animated ring */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-                  <AvatarRing name={inf.name} size={44} animated />
+                  <AvatarRing name={inf.name} size={44} />
                   <div style={{
                     padding: '3px 10px',
                     borderRadius: 10,
@@ -590,14 +595,13 @@ export default function InfluencerSearch() {
                     </span>
                   ))}
                 </div>
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                 </div>
               )
             ))}
-          </AnimatePresence>
-        </motion.div>
+        </div>
       </div>
     </motion.div>
   );

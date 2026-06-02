@@ -59,7 +59,7 @@ export default function Dashboard() {
     async function loadData() {
       try {
         const dash = await api.getDashboard();
-        const infs = await api.getInfluencers();
+        const { data: infs } = await api.getInfluencers();
         const camps = await api.getCampaigns();
         
         setMetricsData(dash.metrics);

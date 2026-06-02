@@ -90,15 +90,18 @@ export default function AuthenticityAnalysis() {
     let mounted = true;
 
     async function loadInfluencers() {
-      try {
-        const data = await api.getInfluencers();
-        if (mounted) {
-          setInfluencers(data);
+      const { data, live } = await api.getInfluencersByPlatform();
+      if (mounted) {
+        if (live) {
+          setInfluencers([
+            ...(data.Instagram || []),
+            ...(data.TikTok || []),
+            ...(data.YouTube || []),
+          ]);
+        } else {
+          setInfluencers([]);
         }
-      } catch (error) {
-        console.error('Failed to load influencers:', error);
-      } finally {
-        if (mounted) setCatalogLoaded(true);
+        setCatalogLoaded(true);
       }
     }
 
@@ -117,12 +120,11 @@ export default function AuthenticityAnalysis() {
     let match = findBestMatch(platformPool, query);
 
     if (!match && platform === 'YouTube') {
-      try {
-        const liveResults = await api.searchYouTube(query, 8);
-        match = findBestMatch(liveResults, query);
-      } catch {
-        // Live search failed; fall through to error below
+      const liveResults = await api.searchYouTube(query, 8);
+      if (liveResults.error) {
+        throw new Error(liveResults.error);
       }
+      match = findBestMatch(liveResults.results, query);
     }
 
     return match;
@@ -172,7 +174,12 @@ export default function AuthenticityAnalysis() {
       setScanned(true);
     } catch (error) {
       console.error(error);
-      setScanError('An error occurred during authenticity scanning.');
+      const message = error instanceof Error ? error.message : 'An error occurred during authenticity scanning.';
+      setScanError(
+        platform === 'YouTube'
+          ? `Live YouTube lookup failed: ${message}`
+          : message,
+      );
       setScanned(false);
       setSelectedInf(null);
     } finally {

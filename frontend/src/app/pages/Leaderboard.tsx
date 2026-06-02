@@ -39,9 +39,19 @@ export default function Leaderboard() {
 
     async function loadData() {
       try {
-        const [leaderboard, influencerList] = await Promise.all([api.getLeaderboard(), api.getInfluencers()]);
+        const [leaderboard, influencerResult] = await Promise.all([
+          api.getLeaderboard(),
+          api.getInfluencersByPlatform(),
+        ]);
         if (mounted) {
           setLeaderboardData(leaderboard);
+          const influencerList = influencerResult.live
+            ? [
+                ...(influencerResult.data.Instagram || []),
+                ...(influencerResult.data.TikTok || []),
+                ...(influencerResult.data.YouTube || []),
+              ]
+            : [];
           setInfluencers(influencerList);
         }
       } catch (error) {

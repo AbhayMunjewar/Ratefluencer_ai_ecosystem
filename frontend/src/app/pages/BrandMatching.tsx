@@ -68,9 +68,19 @@ export default function BrandMatching() {
 
     async function loadData() {
       try {
-        const [brandData, influencerData] = await Promise.all([api.getBrands(), api.getInfluencers()]);
+        const [brandData, influencerResult] = await Promise.all([
+          api.getBrands(),
+          api.getInfluencersByPlatform(),
+        ]);
         if (mounted) {
           setBrands(brandData);
+          const influencerData = influencerResult.live
+            ? [
+                ...(influencerResult.data.Instagram || []),
+                ...(influencerResult.data.TikTok || []),
+                ...(influencerResult.data.YouTube || []),
+              ]
+            : [];
           setInfluencers(influencerData);
           setSelectedBrand(brandData[0] || null);
         }
